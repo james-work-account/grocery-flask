@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="description" content="Get Grocery Info">
+    <meta name="author" content="James">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Grocery Search</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <header>
+        <h1>Grocery Search</h1>
+    </header>
+    <div class="container">
+      {% block content %}
+      {% endblock %}
+    </div>
+    <script type="text/javascript" src="{{ url_for('static', filename='index.js') }}"></script>
+  </body>
+</html>

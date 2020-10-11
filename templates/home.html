@@ -1,0 +1,39 @@
+{% extends 'index.html' %}
+
+{% block content %}
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
+        {{ form.product.label }}
+        {{ form.product(size=50) }}
+        {{ form.submit() }}
+    </form>
+
+    {% if search_result %}
+        <div class="results">
+            {% if search_result|length > 0 %}
+                {% for result in search_result %}
+                    <h2>{{ result.shop_name }}</h2>
+                    {{ result.result | safe }}
+                {% endfor %}
+            {% else %}
+                <p>No results found.</p>
+            {% endif %}
+        </div>
+    {% else %}
+        <h2>TESCO</h2>
+        <table>
+            <tbody>
+                <tr>
+                    <th>Item</th>
+                    <th>Price</th>
+                    <th>Offers</th>
+                </tr>
+                <tr>
+                    <td>Lagavulin Malt Whisky 70Cl</td>
+                    <td>£ 49.00</td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}
