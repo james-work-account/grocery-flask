@@ -1,11 +1,10 @@
-from flask import Flask, request, render_template, flash, session
-from werkzeug.utils import redirect
+import json
 
 from config import Config
+from flask import Flask, request, render_template, flash, session
 from form import ProductForm
 from search import Search
-
-import json
+from werkzeug.utils import redirect
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -48,5 +47,6 @@ def remove_from_session(key):
 
 if __name__ == '__main__':
     import os
+
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
