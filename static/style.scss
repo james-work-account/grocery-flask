@@ -18,11 +18,19 @@ header {
   opacity: .9;
   margin-bottom: 10px;
   
-  h1 {
+  a {
+    text-decoration: none;
     margin: 0;
-    font-size: 1.7em;
-    color: #fff;
-    text-transform: uppercase;
+
+    &:visited {
+      color: #fff;
+    }
+
+    h1 {
+      font-size: 1.7em;
+      color: #fff;
+      text-transform: uppercase;
+    }
   }
 }
 
@@ -63,6 +71,10 @@ table {
 form {
   margin-bottom: 1rem;
 
+  label#error-label {
+    color: red;
+  }
+
   input {
     width: 100%;
     font-size: 16px;
@@ -72,12 +84,17 @@ form {
   input[type=submit] {
     margin-top: 10px;
     -webkit-appearance:none;  
-    border-radius:0px;
+    border-radius:3px;
     color: white;
     background-color: #0095ff;
+    border: none;
 
     &:hover, &:active {
       background-color: #0077cc;
+    }
+
+    &:disabled {
+      background-color: gray;
     }
   }
 }
@@ -93,7 +110,8 @@ form {
     grid-column-gap: 1rem;
     grid-template-areas:
       "csrf csrf"
-      "label label"
+      "error-label error-label"
+      "product-label product-label"
       "product submit";
 
     #csrf-token {
@@ -101,7 +119,13 @@ form {
     }
 
     label {
-      grid-area: label;
+      &#product-label {
+        grid-area: product-label;
+      }
+
+      &#error-label {
+        grid-area: error-label;
+      }
     }
 
     input {

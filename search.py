@@ -26,7 +26,6 @@ class Search:
         self.max_length = 10
         # Set up headless browser/driver (and set user-agent to pretend to not be headless)
         self.options = Options()
-        self.options.add_argument('--headless')
         self.options.add_argument(
             'user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36')
         self.options.add_argument('--disable-gpu')
@@ -64,11 +63,11 @@ class Search:
         try:
             m = [
                 ['TESCO', self._get_tesco_searches()],
-                # ['MORRISONS', self._get_morrisons_searches()],
-                # ['WAITROSE', self._get_waitrose_searches()],
-                # ['ALDI', self._get_aldi_searches()],
-                # ['SAINSBURYS', self._get_sainsburys_searches()],
-                # ['ASDA', self._get_asda_searches()],
+                ['MORRISONS', self._get_morrisons_searches()],
+                ['WAITROSE', self._get_waitrose_searches()],
+                ['ALDI', self._get_aldi_searches()],
+                ['SAINSBURYS', self._get_sainsburys_searches()],
+                ['ASDA', self._get_asda_searches()],
             ]
             # Fetch results
             pool = multiprocessing.Pool()

@@ -18,8 +18,16 @@ header {
   margin-bottom: 10px;
 }
 
-header h1 {
+header a {
+  text-decoration: none;
   margin: 0;
+}
+
+header a:visited {
+  color: #fff;
+}
+
+header a h1 {
   font-size: 1.7em;
   color: #fff;
   text-transform: uppercase;
@@ -84,6 +92,10 @@ form {
   margin-bottom: 1rem;
 }
 
+form label#error-label {
+  color: red;
+}
+
 form input {
   width: 100%;
   font-size: 16px;
@@ -93,13 +105,18 @@ form input {
 form input[type=submit] {
   margin-top: 10px;
   -webkit-appearance: none;
-  border-radius: 0px;
+  border-radius: 3px;
   color: white;
   background-color: #0095ff;
+  border: none;
 }
 
 form input[type=submit]:hover, form input[type=submit]:active {
   background-color: #0077cc;
+}
+
+form input[type=submit]:disabled {
+  background-color: gray;
 }
 
 .results {
@@ -113,7 +130,7 @@ form input[type=submit]:hover, form input[type=submit]:active {
     -ms-grid-columns: 4fr 1fr;
         grid-template-columns: 4fr 1fr;
     grid-column-gap: 1rem;
-        grid-template-areas: "csrf csrf" "label label" "product submit";
+        grid-template-areas: "csrf csrf" "error-label error-label" "product-label product-label" "product submit";
   }
   form #csrf-token {
     -ms-grid-row: 1;
@@ -121,19 +138,25 @@ form input[type=submit]:hover, form input[type=submit]:active {
     -ms-grid-column-span: 2;
     grid-area: csrf;
   }
-  form label {
+  form label#product-label {
+    -ms-grid-row: 3;
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    grid-area: product-label;
+  }
+  form label#error-label {
     -ms-grid-row: 2;
     -ms-grid-column: 1;
     -ms-grid-column-span: 2;
-    grid-area: label;
+    grid-area: error-label;
   }
   form input#product {
-    -ms-grid-row: 3;
+    -ms-grid-row: 4;
     -ms-grid-column: 1;
     grid-area: product;
   }
   form input#submit {
-    -ms-grid-row: 3;
+    -ms-grid-row: 4;
     -ms-grid-column: 2;
     grid-area: submit;
   }

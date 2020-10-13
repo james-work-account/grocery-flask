@@ -1,10 +1,13 @@
 {% extends 'index.html' %}
 
 {% block content %}
-    <form action="" method="post">
+    <form action="{{ url_for('get_data') }}" method="post" onsubmit="return checkForm(this)">
+        {% if error %}
+            <label for="product" id="error-label">{{ error }}</label>
+        {% endif %}
         {{ form.hidden_tag() }}
-        {{ form.product.label }}
-        {{ form.product(size=50) }}
+        {{ form.product.label(id="product-label") }}
+        {{ form.product(minLength=3, maxLength=70) }}
         {{ form.submit() }}
     </form>
 
@@ -20,20 +23,6 @@
             {% endif %}
         </div>
     {% else %}
-        <h2>TESCO</h2>
-        <table>
-            <tbody>
-                <tr>
-                    <th>Item</th>
-                    <th>Price</th>
-                    <th>Offers</th>
-                </tr>
-                <tr>
-                    <td>Lagavulin Malt Whisky 70Cl</td>
-                    <td>£ 49.00</td>
-                    <td></td>
-                </tr>
-            </tbody>
-        </table>
+        <h2>Search for a Product ☝️</h2>
     {% endif %}
 {% endblock %}

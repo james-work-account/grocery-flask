@@ -1,11 +1,10 @@
-window.addEventListener("load", () => {
-    document.getElementById("submit")
-        .addEventListener("click", () => {
-            const form = document.querySelector("form")
-            if(form.checkValidity()) {
-                const div = document.createElement("div");
-                div.classList.add("loader");
-                form.after(div);
-            }
-        })
-})
+const formSubmit = document.getElementById("submit")
+const checkForm = (form) => {
+    if(form.checkValidity()) {
+        const div = document.createElement("div");
+        div.classList.add("loader");
+        form.after(div);
+        formSubmit.disabled = true;
+        // formSubmit.submit();
+    }
+}
