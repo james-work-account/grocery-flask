@@ -2,10 +2,10 @@ import json
 import time
 from distutils import util
 
-from config import Config
+from .config import Config
 from flask import Flask, request, render_template, flash, session
-from form import ProductForm
-from search import Search
+from .form import ProductForm
+from .search import Search
 from werkzeug.utils import redirect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address

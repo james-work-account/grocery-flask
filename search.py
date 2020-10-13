@@ -12,7 +12,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from result import Result
+from .result import Result
 
 CHROMEDRIVER_PATH = os.environ.get('CHROMEDRIVER_PATH', '/usr/local/bin/chromedriver')
 GOOGLE_CHROME_BIN = os.environ.get('GOOGLE_CHROME_BIN', '/usr/bin/google-chrome')
@@ -31,6 +31,7 @@ class Search:
         self.options.add_argument('--disable-gpu')
         self.options.add_argument('--no-sandbox')
         self.options.headless = True
+        self.driver = webdriver.Chrome(executable_path=CHROMEDRIVER_PATH, options=self.options)
 
     def to_json(self):
         return json.dumps([result.__dict__ for result in self.results])
@@ -70,15 +71,13 @@ class Search:
                 ['ASDA', self._get_asda_searches()],
             ]
             # Fetch results
-            pool = multiprocessing.Pool()
-            self.results = pool.map(self.do_thing, m)
-            pool.close()
-            pool.join()
-            for result in self.results:
-                print(result.shop_name)
+            for a in m:
+                self.results.append(self.do_thing(a))
             return self.results
         except Exception as e:
             print(e)
+        finally:
+            self.driver.close()
 
     def _get_tesco_searches(self) -> dict:
         print('Searching Tesco...')
@@ -158,28 +157,26 @@ class Search:
                             name_css_selector: str = None,
                             weight_css_selector: str = None, title_css_selector: str = None, wait_condition: any = None,
                             accept_cookies_css_selector: str = None) -> str:
-        driver = None
         try:
-            driver = webdriver.Chrome(executable_path=CHROMEDRIVER_PATH, options=self.options)
-            driver.get(url)
+            self.driver.get(url)
             # Some shops fetch results after the page has loaded - wait for a certain condition to pass, otherwise timeout and move on.
             if wait_condition is not None:
-                WebDriverWait(driver, 10).until(wait_condition)
+                WebDriverWait(self.driver, 10).until(wait_condition)
 
             # Some shops ask you to accept cookies before continuing
             if accept_cookies_css_selector is not None:
                 try:
-                    driver.find_element_by_css_selector(accept_cookies_css_selector).click()
+                    self.driver.find_element_by_css_selector(accept_cookies_css_selector).click()
                 except NoSuchElementException:
                     pass
 
             # Look for something on the page that indicates that no results are found.
             # If len(condition) is 0, the "no results found" text is not present and you can assume there are results on the page.
-            if len(driver.find_elements_by_css_selector(not_found_css_selector)) == 0:
+            if len(self.driver.find_elements_by_css_selector(not_found_css_selector)) == 0:
                 # Create a PrettyTable
                 t = PrettyTable(['Item', 'Price', 'Offers'])
                 # Iterate over items
-                for i, elem in enumerate(driver.find_elements_by_css_selector(items_list_selector)):
+                for i, elem in enumerate(self.driver.find_elements_by_css_selector(items_list_selector)):
                     # In case lots of items are returned, you probably only need the first few
                     if i == self.max_length:
                         break
@@ -208,10 +205,6 @@ class Search:
                 return f'No results found for {self.search_term}'
         except (NoSuchElementException, TimeoutException):
             return f'Error finding product: {self.search_term}'
-        finally:
-            if driver is not None:
-                # Close driver
-                driver.close()
 
     @staticmethod
     def _format_price(price: str) -> float:
