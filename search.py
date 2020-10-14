@@ -32,6 +32,10 @@ class Search:
         self.options.add_argument('--no-sandbox')
         self.options.add_argument('--disable-extensions')
         self.options.add_argument('--disable-dev-shm-usage')
+        self.options.add_argument('--window-size=1280x1696')
+        self.options.add_argument('--hide-scrollbars')
+        self.options.add_argument('--single-process')
+        self.options.add_argument('--ignore-certificate-errors')
         self.options.headless = True
         self.driver = webdriver.Chrome(executable_path=CHROMEDRIVER_PATH, options=self.options)
         self.shops = [

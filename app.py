@@ -61,17 +61,16 @@ def test_message(message):
 @socketio.on('search', namespace='/socket')
 def search_product(product):
     emit('searching start')
+    search = Search(product['data'])
     try:
-        print(product)
-        search = Search(product['data'])
         for shop in search.shops:
             result = search.do_thing(shop)
             emit('result', {
                 'shop_name': result.shop_name,
                 'result': result.result
             })
-        search.driver.close()
     finally:
+        search.driver.close()
         emit('searching stop')
 
 
