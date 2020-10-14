@@ -1,7 +1,8 @@
 const formSubmit = $("#submit")
 const form = $('form')
 
-const url = `https://${document.domain}:${location.port}/socket`
+const ws_scheme = window.location.protocol == "https:" ? "wss://" : "ws://";
+const url = `${ws_scheme}${document.domain}:${location.port}/socket`
 const socket = io.connect(url)
 
 socket.on('result', function(msg) {
