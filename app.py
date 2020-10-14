@@ -76,7 +76,7 @@ def search_product(product):
             })
             socketio.sleep(0)
     finally:
-        search.driver.close()
+        # search.driver.close()
         emit('searching stop')
         socketio.sleep(0)
 
