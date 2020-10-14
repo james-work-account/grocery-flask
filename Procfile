@@ -1,2 +1,2 @@
-web: web: python app.py
+web: web: python app.py -k eventlet
 heroku ps:scale web=1
