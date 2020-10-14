@@ -21,7 +21,7 @@ limiter = Limiter(
     default_limits=['200 per day', '50 per hour', '1 per second']
     # default_limits=['1 per second']
 )
-socketio = SocketIO(app, logger=True, engineio_logger=True)
+socketio = SocketIO(app, logger=True, engineio_logger=True, cors_allowed_origins="*")
 
 
 @app.before_first_request
