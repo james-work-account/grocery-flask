@@ -12,9 +12,6 @@ from flask_limiter.util import get_remote_address
 from datetime import timedelta
 from flask_socketio import SocketIO, emit
 
-import eventlet
-eventlet.monkey_patch()
-
 
 app = Flask(__name__)
 app.config.from_object(Config)
