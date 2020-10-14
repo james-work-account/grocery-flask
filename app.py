@@ -12,6 +12,9 @@ from flask_limiter.util import get_remote_address
 from datetime import timedelta
 from flask_socketio import SocketIO, emit
 
+import eventlet
+eventlet.monkey_patch()
+
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -56,11 +59,13 @@ def home():
 @socketio.on('my event', namespace='/socket')
 def test_message(message):
     emit('my response', {'data': message['data']})
+    socketio.sleep(0)
 
 
 @socketio.on('search', namespace='/socket')
 def search_product(product):
     emit('searching start')
+    socketio.sleep(0)
     search = Search(product['data'])
     try:
         for shop in search.shops:
@@ -69,14 +74,17 @@ def search_product(product):
                 'shop_name': result.shop_name,
                 'result': result.result
             })
+            socketio.sleep(0)
     finally:
         search.driver.close()
         emit('searching stop')
+        socketio.sleep(0)
 
 
 @socketio.on('connect', namespace='/socket')
 def test_connect():
     emit('connection successful', {'data': 'Connected'})
+    socketio.sleep(0)
 
 
 @socketio.on('disconnect', namespace='/socket')
