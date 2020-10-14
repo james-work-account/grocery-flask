@@ -111,7 +111,6 @@ def check_and_clear_session():
         pass
 
 
-
 def get_session_key(key, as_json: bool = False, pop: bool = False):
     try:
         res = json.loads(session[key]) if as_json else session[key]
