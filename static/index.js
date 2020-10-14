@@ -1,7 +1,7 @@
 const formSubmit = $("#submit")
 const form = $('form')
 
-const url = `http://${document.domain}:${location.port}/socket`
+const url = `https://${document.domain}:${location.port}/socket`
 const socket = io.connect(url)
 
 socket.on('result', function(msg) {
