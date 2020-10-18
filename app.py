@@ -12,7 +12,6 @@ from flask_limiter.util import get_remote_address
 from datetime import timedelta
 from flask_socketio import SocketIO, emit
 
-
 app = Flask(__name__)
 app.config.from_object(Config)
 limiter = Limiter(
@@ -21,7 +20,7 @@ limiter = Limiter(
     default_limits=['200 per day', '50 per hour', '1 per second']
     # default_limits=['1 per second']
 )
-socketio = SocketIO(app, logger=True, engineio_logger=True, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 
 @app.before_first_request
@@ -61,19 +60,32 @@ def test_message(message):
 
 @socketio.on('search', namespace='/socket')
 def search_product(product):
+    import time
+    start_time = time.time()
     emit('searching start')
     socketio.sleep(0)
     search = Search(product['data'])
     try:
         for shop in search.shops:
-            result = search.do_thing(shop)
+            print(f'Searching {shop.shop_name}')
+            page_source = search.load_page_source(shop.url, shop.wait_condition, shop.accept_cookies_css_selector)
+            result = search.search_page_source(page_source,
+                                               shop.not_found_css_selector,
+                                               shop.items_list_selector,
+                                               shop.price_css_selector,
+                                               shop.offer_selector,
+                                               shop.price_split,
+                                               shop.name_css_selector,
+                                               shop.weight_css_selector,
+                                               shop.title_css_selector,
+                                               )
             emit('result', {
-                'shop_name': result.shop_name,
-                'result': result.result
+                'shop_name': shop.shop_name,
+                'result': result
             })
             socketio.sleep(0)
     finally:
-        # search.driver.close()
+        print(f'Search took {time.time() - start_time} to run')
         emit('searching stop')
         socketio.sleep(0)
 
