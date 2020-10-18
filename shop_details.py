@@ -1,5 +1,6 @@
 class ShopDetails:
     def __init__(self,
+                 requires_webdriver: bool,
                  shop_name: str,
                  url: str,
                  not_found_css_selector: str,
@@ -12,6 +13,7 @@ class ShopDetails:
                  title_css_selector: str = None,
                  wait_condition: any = None,
                  accept_cookies_css_selector: str = None):
+        self.requires_webdriver = requires_webdriver
         self.shop_name = shop_name
         self.url = url
         self.not_found_css_selector = not_found_css_selector

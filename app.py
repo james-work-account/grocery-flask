@@ -61,14 +61,12 @@ def test_message(message):
 @socketio.on('search', namespace='/socket')
 def search_product(product):
     import time
-    start_time = time.time()
     emit('searching start')
-    socketio.sleep(0)
     search = Search(product['data'])
     try:
         for shop in search.shops:
             print(f'Searching {shop.shop_name}')
-            page_source = search.load_page_source(shop.url, shop.wait_condition, shop.accept_cookies_css_selector)
+            page_source = search.load_page_source(shop.requires_webdriver, shop.url, shop.wait_condition, shop.accept_cookies_css_selector)
             result = search.search_page_source(page_source,
                                                shop.not_found_css_selector,
                                                shop.items_list_selector,
@@ -83,11 +81,8 @@ def search_product(product):
                 'shop_name': shop.shop_name,
                 'result': result
             })
-            socketio.sleep(0)
     finally:
-        print(f'Search took {time.time() - start_time} to run')
         emit('searching stop')
-        socketio.sleep(0)
 
 
 @socketio.on('connect', namespace='/socket')

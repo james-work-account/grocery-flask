@@ -3,6 +3,7 @@ import multiprocessing
 import os
 import re
 from typing import List
+import requests
 
 from prettytable import PrettyTable
 from selenium import webdriver
@@ -39,7 +40,7 @@ class Search:
         self.options.add_argument('--single-process')
         self.options.add_argument('--ignore-certificate-errors')
         self.options.headless = True
-        self.driver = webdriver.Firefox(executable_path=CHROMEDRIVER_PATH, options=self.options)
+        self.driver = webdriver.Chrome(executable_path=CHROMEDRIVER_PATH, options=self.options)
         self.shops = [
             self._get_tesco_searches(),
             self._get_morrisons_searches(),
@@ -48,9 +49,11 @@ class Search:
             self._get_sainsburys_searches(),
             self._get_asda_searches(),
         ]
+        self.page_source = ''
 
     def _get_tesco_searches(self) -> ShopDetails:
         return ShopDetails(
+            requires_webdriver=False,
             shop_name='TESCO',
             url=f'https://www.tesco.com/groceries/en-GB/search?query={self.search_term}',
             not_found_css_selector='.empty-section',
@@ -62,6 +65,7 @@ class Search:
 
     def _get_morrisons_searches(self) -> ShopDetails:
         return ShopDetails(
+            requires_webdriver=False,
             shop_name='MORRISONS',
             url=f'https://groceries.morrisons.com/search?entry={self.search_term}',
             not_found_css_selector='p[class$=noResultsFoundMessage], div[class$=resourceNotFound]',
@@ -73,6 +77,7 @@ class Search:
 
     def _get_waitrose_searches(self) -> ShopDetails:
         return ShopDetails(
+            requires_webdriver=True,
             shop_name='WAITROSE',
             url=f'https://www.waitrose.com/ecom/shop/search?&searchTerm={self.search_term}',
             not_found_css_selector='[class^=alternativeSearch]',
@@ -86,6 +91,7 @@ class Search:
 
     def _get_aldi_searches(self) -> ShopDetails:
         return ShopDetails(
+            requires_webdriver=False,
             shop_name='ALDI',
             url=f'https://www.aldi.co.uk/search?text={self.search_term}',
             not_found_css_selector='p[class$=no-results]',
@@ -98,6 +104,7 @@ class Search:
 
     def _get_sainsburys_searches(self) -> ShopDetails:
         return ShopDetails(
+            requires_webdriver=True,
             shop_name='SAINSBURYS',
             url=f'https://www.sainsburys.co.uk/gol-ui/SearchDisplayView?filters[keyword]={self.search_term}',
             not_found_css_selector='div[class$=no-results]',
@@ -110,6 +117,7 @@ class Search:
 
     def _get_asda_searches(self) -> ShopDetails:
         return ShopDetails(
+            requires_webdriver=True,
             shop_name='ASDA',
             url=f'https://groceries.asda.com/search/{self.search_term}',
             not_found_css_selector='.no-result',
@@ -122,20 +130,26 @@ class Search:
                                                             'search results'),
         )
 
-    def load_page_source(self, url: str, wait_condition: any = None, accept_cookies_css_selector: str = None):
-        self.driver.get(url)
-        # Some shops fetch results after the page has loaded - wait for a certain condition to pass, otherwise timeout and move on.
-        if wait_condition is not None:
-            WebDriverWait(self.driver, 10).until(wait_condition)
+    def load_page_source(self, requires_webdriver: bool, url: str, wait_condition: any = None, accept_cookies_css_selector: str = None):
+        if requires_webdriver:
+            self.driver.get(url)
+            # Some shops fetch results after the page has loaded - wait for a certain condition to pass, otherwise timeout and move on.
+            if wait_condition is not None:
+                WebDriverWait(self.driver, 10).until(wait_condition)
 
-        # Some shops ask you to accept cookies before continuing
-        if accept_cookies_css_selector is not None:
-            try:
-                self.driver.find_element_by_css_selector(accept_cookies_css_selector).click()
-            except NoSuchElementException:
-                pass
+            # Some shops ask you to accept cookies before continuing
+            if accept_cookies_css_selector is not None:
+                try:
+                    self.driver.find_element_by_css_selector(accept_cookies_css_selector).click()
+                except NoSuchElementException:
+                    pass
 
-        return self.driver.page_source
+            return self.driver.page_source
+        else:
+            req = requests.get(url, headers={
+                "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.99 Safari/537.36",
+            })
+            return req.text
 
     def search_page_source(self, page_source, not_found_css_selector: str, items_list_selector: str,
                             price_css_selector: str, offer_selector: str,
@@ -143,6 +157,8 @@ class Search:
                             title_css_selector: str = None, ) -> str:
         try:
             soup = BeautifulSoup(page_source, 'html.parser')
+            f = open('index.html', 'w+')
+            f.write(soup.prettify())
             # Look for something on the page that indicates that no results are found.
             # If len(condition) is 0, the "no results found" text is not present and you can assume there are results on the page.
             if len(soup.select(not_found_css_selector)) == 0:
