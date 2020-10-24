@@ -88,6 +88,10 @@ table td, table th {
   }
 }
 
+#submit {
+  cursor: pointer;
+}
+
 form {
   margin-bottom: 1rem;
 }
@@ -165,9 +169,13 @@ form input[type=submit]:disabled {
   }
 }
 
-@media (min-width: 100px) {
+.container, header h1 {
+  margin: 0 1rem;
+}
+
+@media (min-width: 1000px) {
   .container, header h1 {
-    max-width: 1000px;
+    max-width: 80vw;
     margin: auto;
   }
 }

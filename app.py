@@ -1,16 +1,17 @@
 import json
 import time
+from datetime import timedelta
 from distutils import util
 
-from config import Config
-from flask import Flask, request, render_template, flash, session
-from form import ProductForm
-from search import Search
-from werkzeug.utils import redirect
+from flask import Flask, request, render_template, session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from datetime import timedelta
 from flask_socketio import SocketIO, emit
+from werkzeug.utils import redirect
+
+from config import Config
+from form import ProductForm
+from search import Search
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -52,59 +53,46 @@ def home():
     return render_template('home.html', form=form, search_result=result, error=error)
 
 
-@socketio.on('my event', namespace='/socket')
-def test_message(message):
-    emit('my response', {'data': message['data']})
-    socketio.sleep(0)
-
-
 @socketio.on('search', namespace='/socket')
 def search_product(product):
     import time
     emit('searching start')
     search = Search(product['data'])
+    print(f'Searching for {search.search_term}')
+    start_time = time.time()
     try:
         for shop in search.shops:
-            print(f'Searching {shop.shop_name}')
-            page_source = search.load_page_source(shop.requires_webdriver, shop.url, shop.wait_condition, shop.accept_cookies_css_selector)
-            result = search.search_page_source(page_source,
-                                               shop.not_found_css_selector,
-                                               shop.items_list_selector,
-                                               shop.price_css_selector,
-                                               shop.offer_selector,
-                                               shop.price_split,
-                                               shop.name_css_selector,
-                                               shop.weight_css_selector,
-                                               shop.title_css_selector,
-                                               )
+            if shop.json_selector is not None:
+                try:
+                    result = search.search_json(shop)
+                except Exception as e:
+                    print(
+                        f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{search.search_term}], REVERTING TO DEFAULT")
+                    print(e)
+                    page_source = search.load_page_source(shop)
+                    result = search.search_page_source(page_source, shop)
+            else:
+                page_source = search.load_page_source(shop)
+                result = search.search_page_source(page_source, shop)
             emit('result', {
                 'shop_name': shop.shop_name,
                 'result': result
             })
     finally:
         emit('searching stop')
+        print(f'Search for {search.search_term} took {time.time() - start_time}')
 
 
 @socketio.on('connect', namespace='/socket')
 def test_connect():
     emit('connection successful', {'data': 'Connected'})
+    print('Client connected')
     socketio.sleep(0)
 
 
 @socketio.on('disconnect', namespace='/socket')
 def test_disconnect():
     print('Client disconnected')
-
-
-# @app.route('/post', methods=['POST'])
-# @limiter.limit('2/minute')
-# def get_data():
-#     if request.form['product'].strip() != '':
-#         session['search_term'] = request.form['product']
-#         search_result = Search(request.form['product'])
-#         search_result.search_all()
-#         session['result'] = search_result.to_json()
-#     return redirect('/')
 
 
 def check_and_clear_session():
