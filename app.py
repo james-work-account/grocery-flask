@@ -59,12 +59,15 @@ def home():
 @socketio.on('search', namespace='/socket')
 def search_product(product):
     import time
-    emit('searching start')
     search = Search(product['data'])
+    emit('searching start', {
+        'search_length': len(search.shops)
+    })
     print(f'Searching for {search.search_term}')
     start_time = time.time()
     try:
-        for shop in search.shops:
+        emit('search length', f'{len(search.shops)}')
+        for i, shop in enumerate(search.shops):
             if shop.json_selector is not None:
                 try:
                     result = search.search_json(shop)
@@ -81,7 +84,8 @@ def search_product(product):
                 result = search.search_page_source(page_source, shop)
             emit('result', {
                 'shop_name': shop.shop_name,
-                'result': result
+                'result': result,
+                'shop_number': i + 1
             })
     except Exception as e:
         bot.send_message(repr(e))
