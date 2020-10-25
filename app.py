@@ -9,9 +9,10 @@ from flask_limiter.util import get_remote_address
 from flask_socketio import SocketIO, emit
 from werkzeug.utils import redirect
 
+from bot.bot import Bot
 from config import Config
 from form import ProductForm
-from search import Search
+from search.search import Search
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -22,6 +23,8 @@ limiter = Limiter(
     # default_limits=['1 per second']
 )
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+bot = Bot()
 
 
 @app.before_first_request
@@ -66,6 +69,8 @@ def search_product(product):
                 try:
                     result = search.search_json(shop)
                 except Exception as e:
+                    error_message = f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{search.search_term}], REVERTING TO DEFAULT"
+                    bot.send_message(error_message)
                     print(
                         f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{search.search_term}], REVERTING TO DEFAULT")
                     print(e)
@@ -78,9 +83,11 @@ def search_product(product):
                 'shop_name': shop.shop_name,
                 'result': result
             })
+    except Exception as e:
+        bot.send_message(repr(e))
     finally:
-        emit('searching stop')
         print(f'Search for {search.search_term} took {time.time() - start_time}')
+        emit('searching stop')
 
 
 @socketio.on('connect', namespace='/socket')

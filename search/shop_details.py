@@ -1,4 +1,4 @@
-from json_selector_helper import JsonSelectorHelper
+from search.json_selector_helper import JsonSelectorHelper
 
 
 class ShopDetails:

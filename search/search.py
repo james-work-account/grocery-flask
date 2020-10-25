@@ -11,8 +11,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from json_selector_helper import JsonSelectorHelper
-from shop_details import ShopDetails
+from search.json_selector_helper import JsonSelectorHelper
+from search.shop_details import ShopDetails
 
 CHROMEDRIVER_PATH = os.environ.get('CHROMEDRIVER_PATH', '/usr/local/bin/chromedriver')
 GOOGLE_CHROME_BIN = os.environ.get('GOOGLE_CHROME_BIN', '/usr/bin/google-chrome')
@@ -262,7 +262,6 @@ class Search:
         if shop.json_selector is not None:
             t = PrettyTable(['Item', 'Price', 'Offers'])
             if shop.json_selector.body is not None:
-                print(shop.json_selector.full_url(self.search_term))
                 js = requests.post(shop.json_selector.full_url(self.search_term), json=shop.json_selector.body,
                                    headers=shop.json_selector.headers).json()
             else:

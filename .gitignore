@@ -1,6 +1,8 @@
 .vscode
 .idea
 
+bot/credentials.py
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

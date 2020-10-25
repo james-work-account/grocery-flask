@@ -8,6 +8,8 @@ Search the following shops for any items:
 - Aldi
 - Sainsburys
 - Asda
+- Co-op
+- B&M
 
 ## Installation
 
