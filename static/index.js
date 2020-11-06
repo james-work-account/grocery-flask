@@ -17,14 +17,10 @@ socket.on("connection successful", function (msg) {
 
 socket.on("searching start", function (msg) {
   $(".results").empty();
-  const div = document.createElement("div");
-  div.classList.add("loader");
-  form.after(div);
   if ($("#searching-text").length === 0) {
     const searchingText = `<h2 id="searching-text">Search complete: <strong><span id="results-found">0</span>/<span id="total-results">${msg.search_length}</span></strong></h2>`;
-    form.after($(searchingText));
+    $(".loader").after($(searchingText));
   }
-  searchPrompt.addClass("display-none");
   return false;
 });
 
@@ -40,5 +36,9 @@ $("form").submit(function (event) {
   event.preventDefault();
   socket.emit("search", { data: $("#product").val() });
   $("form *").prop("disabled", true);
+  searchPrompt.addClass("display-none");
+
+  const div = `<div class="loader"></div>`;
+  form.after($(div));
   return false;
 });

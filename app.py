@@ -12,7 +12,7 @@ from werkzeug.utils import redirect
 from bot.bot import Bot
 from config import Config
 from form import ProductForm
-from search.search import Search
+from search import search
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -57,25 +57,26 @@ def home():
 
 
 @socketio.on('search', namespace='/socket')
-def search_product(product):
+def search_product(data):
     import time
-    search = Search(product['data'])
+    product = data['data']
+    s = search.shops(product)
     emit('searching start', {
-        'search_length': len(search.shops)
+        'search_length': len(s)
     })
-    print(f'Searching for {search.search_term}')
+    print(f'Searching for {product}')
     start_time = time.time()
     try:
-        emit('search length', f'{len(search.shops)}')
-        for i, shop in enumerate(search.shops):
+        emit('search length', f'{len(s)}')
+        for i, shop in enumerate(s):
             if shop.json_selector is not None:
                 try:
                     result = search.search_json(shop)
                 except Exception as e:
-                    error_message = f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{search.search_term}], REVERTING TO DEFAULT"
+                    error_message = f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT"
                     bot.send_message(error_message)
                     print(
-                        f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{search.search_term}], REVERTING TO DEFAULT")
+                        f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT")
                     print(e)
                     page_source = search.load_page_source(shop)
                     result = search.search_page_source(page_source, shop)
@@ -90,7 +91,7 @@ def search_product(product):
     except Exception as e:
         bot.send_message(repr(e))
     finally:
-        print(f'Search for {search.search_term} took {time.time() - start_time}')
+        print(f'Search for {product} took {time.time() - start_time}')
         emit('searching stop')
 
 
