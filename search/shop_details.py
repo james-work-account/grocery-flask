@@ -3,6 +3,7 @@ from search.json_selector_helper import JsonSelectorHelper
 
 class ShopDetails:
     def __init__(self,
+                 search_term: str,
                  requires_webdriver: bool,
                  shop_name: str,
                  url: str,
@@ -19,6 +20,7 @@ class ShopDetails:
                  accept_cookies_css_selector: str = None,
                  json_selector: JsonSelectorHelper = None,
                  ):
+        self.search_term = search_term
         self.requires_webdriver = requires_webdriver
         self.shop_name = shop_name
         self.url = url
