@@ -59,7 +59,8 @@ def _get_morrisons_searches(search_term) -> ShopDetails:
         price_css_selector='.fop-price',
         offer_selector='a.promotion-offer > span',
         name_css_selector='.fop-title span',
-        weight_css_selector='.fop-catch-weight'
+        weight_css_selector='.fop-catch-weight',
+        headers=['Cookie:CVI=69b240ba-26c9-445e-8770-2391bf70455e; TC=bed28bdd-719f-4b6b-9e03-e988b1433ca6; COOKIE_CONSENT=y; QueueITAccepted-SDFrts345E-V3_morrisonsshop=EventId%3Dmorrisonsshop%26QueueId%3Daeba6e18-4471-4642-9a1d-a64a8c01d613%26RedirectType%3Dsafetynet%26IssueTime%3D1604789056%26Hash%3D011484012141a17f791529f7ff549d2a7bf7f78e78f18ec420e4d3da9b2cd60c; BP=0; MORRISONSSESSIONID=2A0AE0B7845BD7C3C6F8E8C6374D169968EFC354; LAST_REQUEST_TIME=1604789063041']
     )
 
 
@@ -224,11 +225,11 @@ def load_page_source(shop: ShopDetails) -> str:
             WebDriverWait(driver, 10).until(shop.wait_condition)
         return driver.page_source
     else:
-        req = requests.get(shop.url, headers={
-            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.99 Safari/537.36",
-        })
+        # req = requests.get(shop.url, headers={
+        #     "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.99 Safari/537.36",
+        # })
         # return req.text
-        return cw.make_request(shop.url.replace("amp;", ""), ["user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.99 Safari/537.36"], False)
+        return cw.make_request(shop.url.replace("amp;", ""), ["user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.99 Safari/537.36"] + shop.headers, False)
 
 
 def search_page_source(page_source: str, shop: ShopDetails) -> str:
