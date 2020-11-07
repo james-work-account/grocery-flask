@@ -205,14 +205,14 @@ def _get_bandm_searches(search_term) -> ShopDetails:
 
 def shops(search_term):
     return [
-        # _get_tesco_searches(search_term),
+        _get_tesco_searches(search_term),
         _get_morrisons_searches(search_term),
-        # _get_waitrose_searches(search_term),
-        # _get_aldi_searches(search_term),
-        # _get_sainsburys_searches(search_term),
-        # _get_asda_searches(search_term),
-        # _get_coop_searches(search_term),
-        # _get_bandm_searches(search_term),
+        _get_waitrose_searches(search_term),
+        _get_aldi_searches(search_term),
+        _get_sainsburys_searches(search_term),
+        _get_asda_searches(search_term),
+        _get_coop_searches(search_term),
+        _get_bandm_searches(search_term),
     ]
 
 
