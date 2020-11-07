@@ -12,7 +12,7 @@ class JsonSelectorHelper:
                  brand_selector: str = None
                  ):
         if headers is None:
-            headers = {}
+            headers = []
         self.json_url = json_url
         self.product_array_selector = product_array_selector
         self.name_selector = name_selector

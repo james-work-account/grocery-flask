@@ -34,10 +34,6 @@ header {
   }
 }
 
-// h2 {
-//   margin-left: 10px
-// }
-
 .display-none {
   display: none;
 }
@@ -67,6 +63,7 @@ table {
   animation: spin 1.5s linear infinite;
   margin: auto;
 }
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -83,7 +80,7 @@ form {
     color: red;
   }
 
-  input {
+  input, select {
     width: 100%;
     font-size: 16px;
     padding: 15px
@@ -111,19 +108,26 @@ form {
   margin-bottom: 2rem;
 }
 
-@media(min-width:740px) {
+@media(min-width:854px) {
   form {
     display: grid;
-    grid-template-columns: 4fr 1fr;
+    grid-template-columns: 3fr 1fr 1fr;
     grid-column-gap: 1rem;
     grid-template-areas:
-      "csrf csrf"
-      "error-label error-label"
-      "product-label product-label"
-      "product submit";
+      "csrf csrf csrf"
+      "error-label error-label error-label"
+      "product-wrapper max_returned-wrapper submit";
 
     #csrf-token {
       grid-area: csrf;
+    }
+
+    .product-wrapper {
+      grid-area: product-wrapper;
+    }
+
+    .max_returned-wrapper {
+      grid-area: max_returned-wrapper;
     }
 
     label {
@@ -158,7 +162,13 @@ form {
 
 @media(min-width:1000px) {
   .container, header h1 {
-    max-width: 80vw;
+    max-width: 90vw;
     margin: auto;
+  }
+}
+
+@media(min-width:1200px) {
+  .container, header h1 {
+    max-width: 80vw;
   }
 }

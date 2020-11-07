@@ -23,6 +23,7 @@ multidict==5.0.0
 packaging==20.4
 pip-review==1.1.0
 prettytable==1.0.1
+pycurl==7.43.0.6
 pyee==7.0.4
 pyparsing==2.4.7
 python-engineio==3.13.2

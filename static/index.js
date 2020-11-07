@@ -34,7 +34,10 @@ socket.on("searching stop", function (msg) {
 
 $("form").submit(function (event) {
   event.preventDefault();
-  socket.emit("search", { data: $("#product").val() });
+  const inputs = $("form :input")
+    .serializeArray()
+    .map((el) => ({ [el.name]: el.value }));
+  socket.emit("search", Object.assign({}, ...inputs));
   $("form *").prop("disabled", true);
   searchPrompt.addClass("display-none");
 

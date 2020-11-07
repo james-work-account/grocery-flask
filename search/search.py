@@ -1,5 +1,6 @@
 import os
 import re
+import search.curl_wrapper as cw
 
 import requests
 from bs4 import BeautifulSoup
@@ -132,7 +133,7 @@ def _get_asda_searches(search_term) -> ShopDetails:
         wait_condition=EC.text_to_be_present_in_element((By.CSS_SELECTOR, '[class^=search-content-header]'),
                                                         'search results'),
         json_selector=JsonSelectorHelper(
-            json_url=f'https://groceries.asda.com/api/items/search?productperpage={max_length}&keyword=',
+            json_url='https://groceries.asda.com/api/items/search?productperpage=' + str(max_length) + '&keyword=',
             product_array_selector='items',
             name_selector='itemName',
             price_selector='price',
@@ -165,12 +166,12 @@ def _get_coop_searches(search_term) -> ShopDetails:
             body={"language": "en", "tree": "coophomedelivery", "store_id": "17eda196-0394-4cf5-9053-a7652fc76671",
                   "match_phrase": {"phrase": f"{search_term}", "language": "en"},
                   "meta": {"pagination": {"page": 1, "page_size": 10}}},
-            headers={
-                "content-type": "application/json",
-                "dg-api-key": "25a9de6b-9648-45f1-af4b-40dd8320f0ee",
-                "dg-organization-id": "291564910276510723",
-                "origin": "https://shop.coop.co.uk"
-            },
+            headers=[
+                "content-type:application/json",
+                "dg-api-key:25a9de6b-9648-45f1-af4b-40dd8320f0ee",
+                "dg-organization-id:291564910276510723",
+                "origin:https://shop.coop.co.uk"
+            ],
         )
     )
 
@@ -189,30 +190,29 @@ def _get_bandm_searches(search_term) -> ShopDetails:
         wait_condition=EC.text_to_be_present_in_element((By.CSS_SELECTOR, 'strong[data-algolia="query"]'),
                                                         search_term),
         json_selector=JsonSelectorHelper(
-            json_url='https://mv7e2a3yql-dsn.algolia.net/1/indexes/*/queries?x-algolia-application-id=MV7E2A3YQL&x-algolia-api-key=MWQyNWIxY2RiMzg3ZjFiNjQ2N2M3ZjcyYjAyODFlM2M5NjQ1ZTUwZDk2N2FmMDdhM2JmZTdiMmRlZGQ0MWE4YmZpbHRlcnM9JTI4c3RhdHVzJTNBYXBwcm92ZWQlMjkrQU5EK3B1Ymxpc2hkYXRlKyUzQysxNjAzNTY4NzM4K0FORCslMjhleHBpcnlkYXRlKyUzRSsxNjAzNTY4NzM4K09SK2V4cGlyeWRhdGUrJTNEKy0xJTI5&',
+            json_url='https://mv7e2a3yql-dsn.algolia.net/1/indexes/*/queries?x-algolia-application-id=MV7E2A3YQL&x-algolia-api-key=MDg5YWJkM2RkYTA1YjBjOTdlZDU3ZTBiMzhhNzM0OThkYmM3ODFmNTk2YzNiZmRkZmMwZTMyMzc5ZjBkNzZmM2ZpbHRlcnM9JTI4c3RhdHVzJTNBYXBwcm92ZWQlMjkrQU5EK3B1Ymxpc2hkYXRlKyUzQysxNjA0NzY3MjU2K0FORCslMjhleHBpcnlkYXRlKyUzRSsxNjA0NzY3MjU2K09SK2V4cGlyeWRhdGUrJTNEKy0xJTI5&',
             product_array_selector='results.0.hits',
             name_selector='title',
             price_selector='productsellprice',
             promotions_text_selector='promotion',
-            body={"requests": [{"indexName": "prod_bmstores",
-                                "params": f"query={search_term}&hitsPerPage={max_length}"}]},
-            headers={
-                'Referer': 'https://www.bmstores.co.uk/'
-            }
+            body={"requests": [{"indexName": "prod_bmstores", "params": f"query=beans&hitsPerPage=10"}]},
+            headers=[
+                'Referer:https://www.bmstores.co.uk/'
+            ]
         ),
     )
 
 
 def shops(search_term):
     return [
-        _get_tesco_searches(search_term),
+        # _get_tesco_searches(search_term),
         _get_morrisons_searches(search_term),
-        _get_waitrose_searches(search_term),
-        _get_aldi_searches(search_term),
-        _get_sainsburys_searches(search_term),
-        _get_asda_searches(search_term),
-        _get_coop_searches(search_term),
-        _get_bandm_searches(search_term),
+        # _get_waitrose_searches(search_term),
+        # _get_aldi_searches(search_term),
+        # _get_sainsburys_searches(search_term),
+        # _get_asda_searches(search_term),
+        # _get_coop_searches(search_term),
+        # _get_bandm_searches(search_term),
     ]
 
 
@@ -227,7 +227,8 @@ def load_page_source(shop: ShopDetails) -> str:
         req = requests.get(shop.url, headers={
             "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.99 Safari/537.36",
         })
-        return req.text
+        # return req.text
+        return cw.make_request(shop.url.replace("amp;", ""), ["user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.99 Safari/537.36"], False)
 
 
 def search_page_source(page_source: str, shop: ShopDetails) -> str:
@@ -241,7 +242,7 @@ def search_page_source(page_source: str, shop: ShopDetails) -> str:
             # Iterate over items
             for i, elem in enumerate(soup.select(shop.items_list_selector)):
                 # In case lots of items are returned, you probably only need the first few
-                if i == max_length:
+                if i >= max_length:
                     break
 
                 title = ''
@@ -276,11 +277,18 @@ def search_json(shop: ShopDetails):
     if shop.json_selector is not None:
         t = PrettyTable(['Item', 'Price', 'Offers'])
         if shop.json_selector.body is not None:
-            js = requests.post(shop.json_selector.full_url(shop.search_term), json=shop.json_selector.body,
-                               headers=shop.json_selector.headers).json()
+            js = cw.make_request(
+                url=shop.json_selector.full_url(shop.search_term).replace("amp;", ""),
+                headers=['Accept: application/json', 'Content-Type: application/json'] + shop.json_selector.headers,
+                is_json=True,
+                body=shop.json_selector.body
+            )
         else:
-            js = requests.get(shop.json_selector.full_url(shop.search_term),
-                              headers=shop.json_selector.headers).json()
+            js = cw.make_request(
+                url=shop.json_selector.full_url(shop.search_term).replace("amp;", ""),
+                headers=shop.json_selector.headers,
+                is_json=True
+            )
 
         products = _get_value(shop.json_selector.product_array_selector.split('.'), js)
         if len(products) > 0:

@@ -3,7 +3,7 @@ import time
 from datetime import timedelta
 from distutils import util
 
-from flask import Flask, request, render_template, session
+from flask import Flask, request, render_template, session, escape
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_socketio import SocketIO, emit
@@ -58,8 +58,7 @@ def home():
 
 @socketio.on('search', namespace='/socket')
 def search_product(data):
-    import time
-    product = data['data']
+    product = escape(data['product'])
     s = search.shops(product)
     emit('searching start', {
         'search_length': len(s)
@@ -68,16 +67,17 @@ def search_product(data):
     start_time = time.time()
     try:
         emit('search length', f'{len(s)}')
+        search.max_length = int(escape(data['max_returned']))
         for i, shop in enumerate(s):
             if shop.json_selector is not None:
                 try:
                     result = search.search_json(shop)
                 except Exception as e:
                     error_message = f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT"
-                    bot.send_message(error_message)
                     print(
                         f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT")
-                    print(e)
+                    print(repr(e))
+                    bot.send_message(error_message, e)
                     page_source = search.load_page_source(shop)
                     result = search.search_page_source(page_source, shop)
             else:
@@ -89,7 +89,8 @@ def search_product(data):
                 'shop_number': i + 1
             })
     except Exception as e:
-        bot.send_message(repr(e))
+        print(repr(e))
+        bot.send_message('', repr(e))
     finally:
         print(f'Search for {product} took {time.time() - start_time}')
         emit('searching stop')

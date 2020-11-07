@@ -6,8 +6,14 @@
             <label for="product" id="error-label">{{ error }}</label>
         {% endif %}
         {{ form.hidden_tag() }}
-        {{ form.product.label(id="product-label") }}
-        {{ form.product(minLength=3, maxLength=70) }}
+        <div class="product-wrapper">
+            {{ form.product.label(id="product-label") }}
+            {{ form.product(minLength=3, maxLength=70) }}
+        </div>
+        <div class="max_returned-wrapper">
+            {{ form.max_returned.label(id="max_returned-label") }}
+            {{ form.max_returned }}
+        </div>
         {{ form.submit() }}
     </form>
 
