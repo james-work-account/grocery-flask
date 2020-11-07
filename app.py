@@ -69,25 +69,29 @@ def search_product(data):
         emit('search length', f'{len(s)}')
         search.max_length = int(escape(data['max_returned']))
         for i, shop in enumerate(s):
-            if shop.json_selector is not None:
-                try:
-                    result = search.search_json(shop)
-                except Exception as e:
-                    error_message = f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT"
-                    print(
-                        f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT")
-                    print(repr(e))
-                    bot.send_message(error_message, e)
+            try:
+                if shop.json_selector is not None:
+                    try:
+                        result = search.search_json(shop)
+                    except Exception as e:
+                        error_message = f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT"
+                        print(
+                            f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT")
+                        print(repr(e))
+                        bot.send_message(error_message, e)
+                        page_source = search.load_page_source(shop)
+                        result = search.search_page_source(page_source, shop)
+                else:
                     page_source = search.load_page_source(shop)
                     result = search.search_page_source(page_source, shop)
-            else:
-                page_source = search.load_page_source(shop)
-                result = search.search_page_source(page_source, shop)
-            emit('result', {
-                'shop_name': shop.shop_name,
-                'result': result,
-                'shop_number': i + 1
-            })
+                emit('result', {
+                    'shop_name': shop.shop_name,
+                    'result': result,
+                    'shop_number': i + 1
+                })
+            except Exception as e:
+                print(repr(e))
+                bot.send_message('', repr(e))
     except Exception as e:
         print(repr(e))
         bot.send_message('', repr(e))
