@@ -3,9 +3,9 @@ import json
 import io
 
 
-def make_request(url, headers, is_json: bool, body=None):
+def make_request(url: str, headers, is_json: bool, body=None):
     curl = pycurl.Curl()
-    curl.setopt(pycurl.URL, url)
+    curl.setopt(pycurl.URL, url.replace(' ', '%20'))
     curl.setopt(pycurl.HTTPHEADER, headers)
     # curl.setopt(pycurl.FOLLOWLOCATION, 1)
 
@@ -15,6 +15,7 @@ def make_request(url, headers, is_json: bool, body=None):
         body_as_file_object = io.StringIO(body_as_json_string)
         curl.setopt(pycurl.READDATA, body_as_file_object)
         curl.setopt(pycurl.POSTFIELDSIZE, len(body_as_json_string))
+        print(body_as_file_object.getvalue())
 
     # curl.setopt(pycurl.TIMEOUT_MS, 3000)
 

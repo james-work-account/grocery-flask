@@ -196,7 +196,7 @@ def _get_bandm_searches(search_term) -> ShopDetails:
             name_selector='title',
             price_selector='productsellprice',
             promotions_text_selector='promotion',
-            body={"requests": [{"indexName": "prod_bmstores", "params": f"query=beans&hitsPerPage=10"}]},
+            body={"requests": [{"indexName": "prod_bmstores", "params": f"query={search_term}&hitsPerPage={max_length}"}]},
             headers=[
                 'Referer:https://www.bmstores.co.uk/'
             ]
