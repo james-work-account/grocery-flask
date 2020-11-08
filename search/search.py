@@ -305,8 +305,11 @@ def search_json(shop: ShopDetails):
                     weight = _get_value(shop.json_selector.weight_selector.split('.'), product)
                     title = f'{title} {weight}'
                 if shop.json_selector.brand_selector is not None:
-                    brand = product[shop.json_selector.brand_selector]
-                    title = f'{brand} {title}'
+                    try:
+                        brand = product[shop.json_selector.brand_selector]
+                        title = f'{brand} {title}'
+                    except KeyError:
+                        pass
 
                 price = _get_value(shop.json_selector.price_selector.split("."), product)
                 if not isinstance(price, str):
