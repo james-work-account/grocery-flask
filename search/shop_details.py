@@ -19,11 +19,9 @@ class ShopDetails:
                  wait_condition: any = None,
                  accept_cookies_css_selector: str = None,
                  json_selector: JsonSelectorHelper = None,
-                 headers=None,
+                 requires_requests: bool = False,
                  ):
-        if headers is None:
-            headers = []
-        self.headers = headers
+        self.requires_requests = requires_requests
         self.search_term = search_term
         self.requires_webdriver = requires_webdriver
         self.shop_name = shop_name

@@ -5,7 +5,7 @@ import io
 
 def make_request(url: str, headers, is_json: bool, body=None):
     curl = pycurl.Curl()
-    curl.setopt(pycurl.URL, url.replace(' ', '%20'))
+    curl.setopt(pycurl.URL, url.replace(' ', '%20').replace("amp;", ""))
     curl.setopt(pycurl.HTTPHEADER, headers)
     # curl.setopt(pycurl.FOLLOWLOCATION, 1)
 

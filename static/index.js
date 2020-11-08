@@ -43,5 +43,6 @@ $("form").submit(function (event) {
 
   const div = `<div class="loader"></div>`;
   form.after($(div));
+  $(".results").empty();
   return false;
 });
