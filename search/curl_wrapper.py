@@ -15,7 +15,6 @@ def make_request(url: str, headers, is_json: bool, body=None):
         body_as_file_object = io.StringIO(body_as_json_string)
         curl.setopt(pycurl.READDATA, body_as_file_object)
         curl.setopt(pycurl.POSTFIELDSIZE, len(body_as_json_string))
-        print(body_as_file_object.getvalue())
 
     # curl.setopt(pycurl.TIMEOUT_MS, 3000)
 
