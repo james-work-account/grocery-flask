@@ -89,6 +89,7 @@ def search_product(data):
                     'result': result,
                     'shop_number': i + 1
                 })
+                socketio.sleep()  # Without this sleep, the app batches up the emits. I have no idea why. Maybe they're happening too quickly for it to keep up?
             except Exception as e:
                 print(repr(e))
                 bot.send_message('', repr(e))
@@ -104,7 +105,7 @@ def search_product(data):
 def test_connect():
     emit('connection successful', {'data': 'Connected'})
     print('Client connected')
-    socketio.sleep(0)
+    socketio.sleep()
 
 
 @socketio.on('disconnect', namespace='/socket')
