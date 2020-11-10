@@ -1,5 +1,7 @@
 import os
 import re
+from urllib.error import HTTPError
+
 import search.curl_wrapper as cw
 
 import requests
@@ -231,7 +233,13 @@ def load_page_source(shop: ShopDetails) -> str:
             })
             return req.text
         else:
-            return cw.make_request(shop.url, ["user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.99 Safari/537.36"], False)
+            try:
+                return cw.make_request(shop.url, ["user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.99 Safari/537.36"], False)
+            except HTTPError as e:
+                if e.code == 404:
+                    return ''
+                else:
+                    raise e
 
 
 def search_page_source(page_source: str, shop: ShopDetails) -> str:
@@ -239,7 +247,7 @@ def search_page_source(page_source: str, shop: ShopDetails) -> str:
         soup = BeautifulSoup(page_source, 'html.parser')
         # Look for something on the page that indicates that no results are found.
         # If len(condition) is 0, the "no results found" text is not present and you can assume there are results on the page.
-        if len(soup.select(shop.not_found_css_selector)) == 0:
+        if (len(soup.select(shop.not_found_css_selector)) == 0) & (page_source != ''):
             # Create a PrettyTable
             t = PrettyTable(['Item', 'Price', 'Offers'])
             # Iterate over items

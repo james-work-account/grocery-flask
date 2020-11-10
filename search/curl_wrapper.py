@@ -1,3 +1,5 @@
+from urllib.error import HTTPError
+
 import pycurl
 import json
 import io
@@ -25,7 +27,7 @@ def make_request(url: str, headers, is_json: bool, body=None):
 
     status_code = curl.getinfo(pycurl.RESPONSE_CODE)
     if status_code != 200:
-        raise Exception(f"Aww Snap :( Server returned HTTP status code {status_code} and error {response.getvalue().decode('iso-8859-1')}")
+        raise HTTPError(url, status_code, f"Aww Snap :( Server returned HTTP status code {status_code} and error {response.getvalue().decode('iso-8859-1')}", None, None)
 
     curl.close()
 
