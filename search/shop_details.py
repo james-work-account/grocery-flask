@@ -20,9 +20,7 @@ class ShopDetails:
                  accept_cookies_css_selector: str = None,
                  json_selector: JsonSelectorHelper = None,
                  requires_requests: bool = False,
-                 min_length: int = None,
                  ):
-        self.min_length = min_length
         self.requires_requests = requires_requests
         self.search_term = search_term
         self.requires_webdriver = requires_webdriver

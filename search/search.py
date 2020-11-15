@@ -234,7 +234,7 @@ def load_page_source(shop: ShopDetails) -> str:
             WebDriverWait(driver, 10).until(shop.wait_condition)
         return driver.page_source
     else:
-        if shop.requires_requests or (shop.min_length is not None and len(shop.search_term) <= shop.min_length):
+        if shop.requires_requests:
             req = requests.get(shop.url, headers={
                 "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.99 Safari/537.36",
             })
