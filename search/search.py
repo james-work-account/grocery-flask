@@ -88,11 +88,18 @@ def _get_aldi_searches(search_term) -> ShopDetails:
         shop_name='ALDI',
         url=f'https://www.aldi.co.uk/search?text={search_term}',
         not_found_css_selector='p[class$=no-results]',
-        items_list_selector='#products-tab .hover-item',
+        items_list_selector='.category-grid .hover-item',
         price_css_selector='.category-item__price',
         offer_selector='.js-price-discount',
         price_split=True,
         title_css_selector='.category-item__title',
+        json_selector=JsonSelectorHelper(
+            json_url=f'https://www.aldi.co.uk/api/productsearch/category/{search_term.capitalize()}?',
+            product_array_selector='results',
+            name_selector='name',
+            price_selector='price',
+            promotions_text_selector='wasPrice',
+        )
     )
 
 
@@ -227,7 +234,7 @@ def load_page_source(shop: ShopDetails) -> str:
             WebDriverWait(driver, 10).until(shop.wait_condition)
         return driver.page_source
     else:
-        if shop.requires_requests:
+        if shop.requires_requests or (shop.min_length is not None and len(shop.search_term) <= shop.min_length):
             req = requests.get(shop.url, headers={
                 "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.99 Safari/537.36",
             })
@@ -247,7 +254,7 @@ def search_page_source(page_source: str, shop: ShopDetails) -> str:
         soup = BeautifulSoup(page_source, 'html.parser')
         # Look for something on the page that indicates that no results are found.
         # If len(condition) is 0, the "no results found" text is not present and you can assume there are results on the page.
-        if (len(soup.select(shop.not_found_css_selector)) == 0) & (page_source != ''):
+        if (len(soup.select(shop.not_found_css_selector)) == 0) & (page_source != '') & (len(soup.select(shop.items_list_selector)) > 0):
             # Create a PrettyTable
             t = PrettyTable(['Item', 'Price', 'Offers'])
             # Iterate over items

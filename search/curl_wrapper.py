@@ -26,8 +26,12 @@ def make_request(url: str, headers, is_json: bool, body=None):
     curl.perform()
 
     status_code = curl.getinfo(pycurl.RESPONSE_CODE)
+    response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
     if status_code != 200:
-        raise HTTPError(url, status_code, f"Aww Snap :( Server returned HTTP status code {status_code} and error {response.getvalue().decode('iso-8859-1')}", None, None)
+        if response_content_type == 'text/html':
+            raise HTTPError(url, status_code, f"Aww Snap :( Server returned HTTP status code {status_code}", None, None)
+        else:
+            raise HTTPError(url, status_code, f"Aww Snap :( Server returned HTTP status code {status_code} and error {response.getvalue().decode('iso-8859-1')}", None, None)
 
     curl.close()
 

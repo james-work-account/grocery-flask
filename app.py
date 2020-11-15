@@ -91,11 +91,11 @@ def search_product(data):
                 })
                 socketio.sleep()  # Without this sleep, the app batches up the emits. I have no idea why. Maybe they're happening too quickly for it to keep up?
             except Exception as e:
-                print(repr(e))
-                bot.send_message('', repr(e))
+                print(f'{product} - {shop.shop_name}', repr(e))
+                bot.send_message_with_tag(f'{search_product} - {shop}', repr(e))
     except Exception as e:
         print(repr(e))
-        bot.send_message('', repr(e))
+        bot.send_message_with_tag('', repr(e))
     finally:
         print(f'Search for {product} took {time.time() - start_time}')
         emit('searching stop')
