@@ -2,6 +2,7 @@ import json
 import time
 from datetime import timedelta
 from distutils import util
+from urllib.error import HTTPError
 
 from flask import Flask, request, render_template, session, escape
 from flask_limiter import Limiter
@@ -25,6 +26,15 @@ limiter = Limiter(
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 bot = Bot()
+if bot.user_id is not None:
+    pass
+else:
+    bot = None
+
+# setting up cache-on-a-budget
+most_recent_cache = time.time()  # will be overridden when first request > max_cache_time is made
+max_cache_time = 60 * 15  # 15 minutes
+cache = dict()  # don't want to bother dealing with redis right now
 
 
 @app.before_first_request
@@ -65,25 +75,43 @@ def search_product(data):
     })
     print(f'Searching for {product}')
     start_time = time.time()
+
+    # clear cache if request is more than max_cache_time since previous request
+    global most_recent_cache
+    global cache
+    if start_time - most_recent_cache >= max_cache_time:
+        most_recent_cache = start_time
+        cache = dict()
+
     try:
         emit('search length', f'{len(s)}')
         search.max_length = int(escape(data['max_returned']))
         for i, shop in enumerate(s):
             try:
-                if shop.json_selector is not None:
-                    try:
-                        result = search.search_json(shop)
-                    except Exception as e:
-                        error_message = f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT"
-                        print(
-                            f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT")
-                        print(repr(e))
-                        bot.send_message(error_message, e)
+                # deal with cache - if key exists, assign value without bothering to re-search
+                cache_key = f'{shop.shop_name}.{product}.{search.max_length}'
+                cache_value = cache.get(cache_key)
+                if cache_value is not None:
+                    result = cache_value
+                else:
+                    if shop.json_selector is not None:
+                        try:
+                            result = search.search_json(shop)
+                        except Exception as e:
+                            error_message = f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT"
+                            if not (isinstance(e, HTTPError) and shop.shop_name == "ALDI" and e.code == 503):
+                                if bot is not None:
+                                    bot.send_message(error_message, e)
+                                print(
+                                    f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT")
+                                print(repr(e))
+                            page_source = search.load_page_source(shop)
+                            result = search.search_page_source(page_source, shop)
+                    else:
                         page_source = search.load_page_source(shop)
                         result = search.search_page_source(page_source, shop)
-                else:
-                    page_source = search.load_page_source(shop)
-                    result = search.search_page_source(page_source, shop)
+                    # update cache with new value for shop/product/max combination
+                    cache[cache_key] = result
                 emit('result', {
                     'shop_name': shop.shop_name,
                     'result': result,
@@ -92,10 +120,12 @@ def search_product(data):
                 socketio.sleep()  # Without this sleep, the app batches up the emits. I have no idea why. Maybe they're happening too quickly for it to keep up?
             except Exception as e:
                 print(f'{product} - {shop.shop_name}', repr(e))
-                bot.send_message_with_tag(f'{search_product} - {shop}', repr(e))
+                if bot is not None:
+                    bot.send_message_with_tag(f'{search_product} - {shop}', repr(e))
     except Exception as e:
         print(repr(e))
-        bot.send_message_with_tag('', repr(e))
+        if bot is not None:
+            bot.send_message_with_tag('', repr(e))
     finally:
         print(f'Search for {product} took {time.time() - start_time}')
         emit('searching stop')
