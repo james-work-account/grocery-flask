@@ -13,6 +13,7 @@ from werkzeug.utils import redirect
 from bot.bot import Bot
 from config import Config
 from form import ProductForm
+from helpers import clean_string
 from search import search
 
 app = Flask(__name__)
@@ -68,7 +69,7 @@ def home():
 
 @socketio.on('search', namespace='/socket')
 def search_product(data):
-    product = escape(data['product'])
+    product = clean_string(data['product'])
     s = search.shops(product)
     emit('searching start', {
         'search_length': len(s)
