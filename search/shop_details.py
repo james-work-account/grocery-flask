@@ -10,6 +10,8 @@ class ShopDetails:
                  not_found_css_selector: str,
                  items_list_selector: str,
                  price_css_selector: str,
+                 base_url: str,
+                 link_selector: str,
                  offer_selector: str,
                  currency_symbol: str = '',
                  price_split: bool = False,
@@ -29,6 +31,8 @@ class ShopDetails:
         self.not_found_css_selector = not_found_css_selector
         self.items_list_selector = items_list_selector
         self.price_css_selector = price_css_selector
+        self.base_url = base_url
+        self.link_selector = link_selector
         self.offer_selector = offer_selector
         self.currency_symbol = currency_symbol
         self.price_split = price_split

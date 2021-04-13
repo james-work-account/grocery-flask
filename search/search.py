@@ -4,6 +4,7 @@ from urllib.error import HTTPError
 
 import search.curl_wrapper as cw
 
+import html
 import requests
 from bs4 import BeautifulSoup
 from prettytable import PrettyTable
@@ -17,8 +18,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from search.json_selector_helper import JsonSelectorHelper
 from search.shop_details import ShopDetails
 
-CHROMEDRIVER_PATH = os.environ.get('CHROMEDRIVER_PATH', '/usr/local/bin/chromedriver')
-GOOGLE_CHROME_BIN = os.environ.get('GOOGLE_CHROME_BIN', '/usr/bin/google-chrome')
+CHROMEDRIVER_PATH = os.environ.get(
+    'CHROMEDRIVER_PATH', '/usr/local/bin/chromedriver')
+GOOGLE_CHROME_BIN = os.environ.get(
+    'GOOGLE_CHROME_BIN', '/usr/bin/google-chrome')
 
 max_length = 10
 options = Options()
@@ -45,6 +48,8 @@ def _get_tesco_searches(search_term) -> ShopDetails:
         not_found_css_selector='.empty-section',
         items_list_selector='.product-list > li',
         price_css_selector='.price-control-wrapper',
+        base_url='https://www.tesco.com',
+        link_selector='a[data-auto="product-tile--title"]',
         offer_selector='div > div.product-tile.has-promotion > div > div.promotions-wrapper.hidden-medium > ul > li > a > div > span.offer-text, .product-info-message',
         title_css_selector='a[data-auto="product-tile--title"]',
     )
@@ -59,6 +64,8 @@ def _get_morrisons_searches(search_term) -> ShopDetails:
         not_found_css_selector='p[class$=noResultsFoundMessage], div[class$=resourceNotFound]',
         items_list_selector='.fops-shelf > li',
         price_css_selector='.fop-price',
+        base_url='https://groceries.morrisons.com',
+        link_selector='div.fop-contentWrapper a:not(.promotion-offer)',
         offer_selector='a.promotion-offer > span',
         name_css_selector='.fop-title span',
         weight_css_selector='.fop-catch-weight',
@@ -75,6 +82,8 @@ def _get_waitrose_searches(search_term) -> ShopDetails:
         not_found_css_selector='[class^=alternativeSearch]',
         items_list_selector='.container-fluid > .row > article',
         price_css_selector='span[data-test=product-pod-price] > span',
+        base_url='https://www.waitrose.com',
+        link_selector='header > a',
         offer_selector='[data-test=link-offer]',
         name_css_selector='[class^=name_]',
         weight_css_selector='[class^=size]',
@@ -90,6 +99,8 @@ def _get_aldi_searches(search_term) -> ShopDetails:
         not_found_css_selector='p[class$=no-results]',
         items_list_selector='.category-grid .hover-item',
         price_css_selector='.category-item__price',
+        base_url='http://www.aldi.co.uk',
+        link_selector='a.js-product-link',
         offer_selector='.js-price-discount',
         price_split=True,
         title_css_selector='.category-item__title',
@@ -112,10 +123,13 @@ def _get_sainsburys_searches(search_term) -> ShopDetails:
         not_found_css_selector='div[class$=no-results]',
         items_list_selector='.ln-o-section:not(.header-fixed-subheading) li.pt-grid-item',
         price_css_selector='[data-test-id=pt-retail-price]',
+        base_url='',
+        link_selector='a.pt__link',
         offer_selector='.promotion-message, .pd__label',
         currency_symbol='£',
         title_css_selector='[data-test-id=product-tile-description]',
-        wait_condition=EC.presence_of_element_located((By.CSS_SELECTOR, '[data-test-id=search-results-title]')),
+        wait_condition=EC.presence_of_element_located(
+            (By.CSS_SELECTOR, '[data-test-id=search-results-title]')),
         json_selector=JsonSelectorHelper(
             json_url=f"https://www.sainsburys.co.uk/groceries-api/gol-services/product/v1/product?page_size={max_length}&filter%5Bkeyword%5D=",
             product_array_selector="products",
@@ -124,6 +138,7 @@ def _get_sainsburys_searches(search_term) -> ShopDetails:
             promotions_array_selector="promotions",
             promotions_text_selector="strap_line",
             weight_selector=None,
+            link="full_url"
         )
     )
 
@@ -137,19 +152,24 @@ def _get_asda_searches(search_term) -> ShopDetails:
         not_found_css_selector='.no-result',
         items_list_selector='#main-content > main > div.search-page-content > div:nth-child(4) > div > div.co-product-list > ul li.co-item',
         price_css_selector='.co-product__price',
+        base_url='https://groceries.asda.com/',
+        link_selector='a.co-product__anchor',
         offer_selector='.link-save-banner-large__config',
         name_css_selector='[data-auto-id=linkProductTitle]',
         weight_css_selector='.co-product__volume',
         wait_condition=EC.text_to_be_present_in_element((By.CSS_SELECTOR, '[class^=search-content-header]'),
                                                         'search results'),
         json_selector=JsonSelectorHelper(
-            json_url='https://groceries.asda.com/api/items/search?productperpage=' + str(max_length) + '&keyword=',
+            json_url='https://groceries.asda.com/api/items/search?productperpage=' +
+            str(max_length) + '&keyword=',
             product_array_selector='items',
             name_selector='itemName',
             price_selector='price',
             promotions_text_selector='promoDetailFull',
             brand_selector='brandName',
             weight_selector='weight',
+            base_url='https://groceries.asda.com/product/',
+            link='id'
         )
     )
 
@@ -163,6 +183,8 @@ def _get_coop_searches(search_term) -> ShopDetails:
         not_found_css_selector='.search-results .search-results--no-results',
         items_list_selector='.product-list--grid > article',
         price_css_selector='.product-card--info--price',
+        base_url='https://shop.coop.co.uk/',
+        link_selector='a.product-card--link',
         offer_selector='.product-promo--name',
         title_css_selector='.product-card--name',
         wait_condition=EC.text_to_be_present_in_element((By.CSS_SELECTOR, '.page-header__title'),
@@ -182,6 +204,8 @@ def _get_coop_searches(search_term) -> ShopDetails:
                 "dg-organization-id:291564910276510723",
                 "origin:https://shop.coop.co.uk"
             ],
+            base_url='https://shop.coop.co.uk/product/',
+            link='master_product_id'
         )
     )
 
@@ -195,6 +219,8 @@ def _get_bandm_searches(search_term) -> ShopDetails:
         not_found_css_selector='.search-results .search-results--no-results',
         items_list_selector='[data-algolia="hits"] > ul > li',
         price_css_selector='a > div > span',
+        base_url='https://www.bmstores.co.uk',
+        link_selector='a.bm-product-link',
         offer_selector='.badge',
         title_css_selector='h2',
         wait_condition=EC.text_to_be_present_in_element((By.CSS_SELECTOR, 'strong[data-algolia="query"]'),
@@ -205,10 +231,13 @@ def _get_bandm_searches(search_term) -> ShopDetails:
             name_selector='title',
             price_selector='productsellprice',
             promotions_text_selector='promotion',
-            body={"requests": [{"indexName": "prod_bmstores", "params": f"query={search_term}&hitsPerPage={max_length}"}]},
+            body={"requests": [{"indexName": "prod_bmstores",
+                                "params": f"query={search_term}&hitsPerPage={max_length}"}]},
             headers=[
                 'Referer:https://www.bmstores.co.uk/'
-            ]
+            ],
+            base_url='https://www.bmstores.co.uk',
+            link='url'
         ),
     )
 
@@ -267,24 +296,31 @@ def search_page_source(page_source: str, shop: ShopDetails) -> str:
                 # Title should be in the format `Name Quantity`
                 # Some shops combine them together (use title_css_selector), others have them separate (use name_css_selector and weight_css_selector)
                 if shop.title_css_selector is not None:
-                    title = elem.select_one(shop.title_css_selector).text.replace('\n', ' ').strip()
+                    title = elem.select_one(
+                        shop.title_css_selector).text.replace('\n', ' ').strip()
                 if shop.name_css_selector is not None and shop.weight_css_selector is not None:
                     name = elem.select_one(shop.name_css_selector).text.strip()
-                    weight = elem.select_one(shop.weight_css_selector).text.strip()
+                    weight = elem.select_one(
+                        shop.weight_css_selector).text.strip()
                     title = f'{name} {weight}'
                 try:
-                    price = elem.select_one(shop.price_css_selector).text.replace('\n', ' ').strip()
+                    price = elem.select_one(
+                        shop.price_css_selector).text.replace('\n', ' ').strip()
                 except AttributeError:
                     continue
                 # In case the price isn't the only text in the element returned by the price_css_selector
                 if shop.price_split:
                     price = price.split(' ')[0]
 
+                a_href = elem.select_one(shop.link_selector)['href']
+
+                title_with_link = f'<a href="{shop.base_url + a_href}" target=_blank>{title}</a>'
+
                 offer = ' '.join([el.getText().strip() for el in
                                   set(elem.select(shop.offer_selector))])
 
-                t.add_row([title, price, offer])
-            return t.get_html_string(sortby='Price', sort_key=lambda row: _format_price(row[0]))
+                t.add_row([title_with_link, price, offer])
+            return html.unescape(t.get_html_string(sortby='Price', sort_key=lambda row: _format_price(row[0])))
         else:
             return f'No results found for {shop.search_term}'
     except (NoSuchElementException, TimeoutException):
@@ -297,7 +333,8 @@ def search_json(shop: ShopDetails):
         if shop.json_selector.body is not None:
             js = cw.make_request(
                 url=shop.json_selector.full_url(shop.search_term),
-                headers=['Accept: application/json', 'Content-Type: application/json'] + shop.json_selector.headers,
+                headers=['Accept: application/json',
+                         'Content-Type: application/json'] + shop.json_selector.headers,
                 is_json=True,
                 body=shop.json_selector.body
             )
@@ -308,16 +345,20 @@ def search_json(shop: ShopDetails):
                 is_json=True
             )
 
-        products = _get_value(shop.json_selector.product_array_selector.split('.'), js)
+        products = _get_value(
+            shop.json_selector.product_array_selector.split('.'), js)
         if len(products) > 0:
             for i, product in enumerate(products):
                 if i == max_length:
                     break
 
-                name = _get_value(shop.json_selector.name_selector.split('.'), product)
-                title = re.sub("\\[\\d]", "", name)  # remove random number from coop
+                name = _get_value(
+                    shop.json_selector.name_selector.split('.'), product)
+                # remove random number from coop
+                title = re.sub("\\[\\d]", "", name)
                 if shop.json_selector.weight_selector is not None:
-                    weight = _get_value(shop.json_selector.weight_selector.split('.'), product)
+                    weight = _get_value(
+                        shop.json_selector.weight_selector.split('.'), product)
                     title = f'{title} {weight}'
                 if shop.json_selector.brand_selector is not None:
                     try:
@@ -326,7 +367,8 @@ def search_json(shop: ShopDetails):
                     except KeyError:
                         pass
 
-                price = _get_value(shop.json_selector.price_selector.split("."), product)
+                price = _get_value(
+                    shop.json_selector.price_selector.split("."), product)
                 if not isinstance(price, str):
                     price = "£{:.2f}".format(float(price))
 
@@ -335,13 +377,22 @@ def search_json(shop: ShopDetails):
                         [_get_value(shop.json_selector.promotions_text_selector.split("."), o) for o in
                          product[shop.json_selector.promotions_array_selector]])
                 else:
-                    offer = _get_value(shop.json_selector.promotions_text_selector.split("."), product)
+                    offer = _get_value(
+                        shop.json_selector.promotions_text_selector.split("."), product)
                     if str(offer) == '0':
                         offer = ''
 
-                t.add_row([title, price, offer])
+                if shop.json_selector.base_url is not None:
+                    link = shop.json_selector.base_url + \
+                        product[shop.json_selector.link]
+                else:
+                    link = product[shop.json_selector.link]
 
-            return t.get_html_string(sortby='Price', sort_key=lambda row: _format_price(row[0]))
+                title_with_link = f'<a href="{link}" target=_blank>{title}</a>'
+
+                t.add_row([title_with_link, price, offer])
+
+            return html.unescape(t.get_html_string(sortby='Price', sort_key=lambda row: _format_price(row[0])))
         else:
             return f'No results found for {shop.search_term}'
     else:
@@ -376,7 +427,8 @@ def _format_price(price: str) -> float:
     :return: float
     """
     pound_pattern = '[0-9]+(\\.[0-9]{2}|$)'  # matches pounds, e.g. £2 or £2.99
-    penny_pattern = '[0-9]+'  # matches pennies, e.g. 65 (to be turned into 0.65 later)
+    # matches pennies, e.g. 65 (to be turned into 0.65 later)
+    penny_pattern = '[0-9]+'
     pound_match = re.search(pound_pattern, price)
     penny_match = re.search(penny_pattern, price)
     if pound_match is not None:
@@ -386,4 +438,3 @@ def _format_price(price: str) -> float:
         span = penny_match.span()
         return float(f'0.{price[span[0]:span[1]]}')
     return 0  # Default - if the price doesn't match either regex, return the price unordered
-

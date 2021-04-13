@@ -5,11 +5,13 @@ class JsonSelectorHelper:
                  name_selector: str,
                  price_selector: str,
                  promotions_text_selector: str,
+                 link: str = None,
                  body: dict = None,
                  headers=None,
                  promotions_array_selector: str = None,
                  weight_selector: str = None,
-                 brand_selector: str = None
+                 brand_selector: str = None,
+                 base_url: str = None,
                  ):
         if headers is None:
             headers = []
@@ -23,6 +25,8 @@ class JsonSelectorHelper:
         self.promotions_array_selector = promotions_array_selector
         self.weight_selector = weight_selector
         self.brand_selector = brand_selector
+        self.link = link
+        self.base_url = base_url
 
     def full_url(self, search_term: str):
         return self.json_url + search_term
