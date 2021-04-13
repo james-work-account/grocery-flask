@@ -62,12 +62,12 @@ def _get_morrisons_searches(search_term) -> ShopDetails:
         shop_name='MORRISONS',
         url=f'https://groceries.morrisons.com/search?entry={search_term}',
         not_found_css_selector='p[class$=noResultsFoundMessage], div[class$=resourceNotFound]',
-        items_list_selector='.fops-shelf > li',
+        items_list_selector='.fops-shelf > li:not(.fops-item--external)',
         price_css_selector='.fop-price',
         base_url='https://groceries.morrisons.com',
         link_selector='div.fop-contentWrapper a:not(.promotion-offer)',
         offer_selector='a.promotion-offer > span',
-        name_css_selector='.fop-title span',
+        name_css_selector='.fop-title > span',
         weight_css_selector='.fop-catch-weight',
         requires_requests=True
     )
