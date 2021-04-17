@@ -110,6 +110,7 @@ def _get_aldi_searches(search_term) -> ShopDetails:
             name_selector='name',
             price_selector='price',
             promotions_text_selector='wasPrice',
+            link='productUrl'
         )
     )
 

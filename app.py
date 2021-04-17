@@ -33,7 +33,8 @@ else:
     bot = None
 
 # setting up cache-on-a-budget
-most_recent_cache = time.time()  # will be overridden when first request > max_cache_time is made
+# will be overridden when first request > max_cache_time is made
+most_recent_cache = time.time()
 max_cache_time = 60 * 15  # 15 minutes
 cache = dict()  # don't want to bother dealing with redis right now
 
@@ -103,8 +104,7 @@ def search_product(data):
                             if not (isinstance(e, HTTPError) and shop.shop_name == "ALDI" and e.code == 503):
                                 if bot is not None:
                                     bot.send_message(error_message, e)
-                                print(
-                                    f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT")
+                                print(f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT")
                                 print(repr(e))
                             page_source = search.load_page_source(shop)
                             result = search.search_page_source(page_source, shop)
@@ -122,7 +122,7 @@ def search_product(data):
             except Exception as e:
                 print(f'{product} - {shop.shop_name}', repr(e))
                 if bot is not None:
-                    bot.send_message_with_tag(f'{search_product} - {shop}', repr(e))
+                    bot.send_message_with_tag(f'{product} - {shop.shop_name}', repr(e))
     except Exception as e:
         print(repr(e))
         if bot is not None:
