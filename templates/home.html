@@ -1,22 +1,15 @@
-{% extends 'index.html' %}
+{% extends 'index.html' %} {% block content %}
+<form>
+  {% if error %}
+  <label for="product" id="error-label">{{ error }}</label>
+  {% endif %} {{ form.hidden_tag() }}
+  <div class="product-wrapper">
+    {{ form.product.label(id="product-label") }} {{ form.product(minLength=3, maxLength=70) }}
+  </div>
+  <div class="max_returned-wrapper">{{ form.max_returned.label(id="max_returned-label") }} {{ form.max_returned }}</div>
+  {{ form.submit() }}
+</form>
 
-{% block content %}
-    <form>
-        {% if error %}
-            <label for="product" id="error-label">{{ error }}</label>
-        {% endif %}
-        {{ form.hidden_tag() }}
-        <div class="product-wrapper">
-            {{ form.product.label(id="product-label") }}
-            {{ form.product(minLength=3, maxLength=70) }}
-        </div>
-        <div class="max_returned-wrapper">
-            {{ form.max_returned.label(id="max_returned-label") }}
-            {{ form.max_returned }}
-        </div>
-        {{ form.submit() }}
-    </form>
-
-    <h2 id="search-prompt">Search for a Product ☝️</h2>
-    <div class="results"></div>
+<h2 id="search-prompt">Search for a Product ☝️</h2>
+<div class="results"></div>
 {% endblock %}

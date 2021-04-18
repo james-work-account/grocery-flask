@@ -14,7 +14,7 @@ header {
   background-color: rebeccapurple;
   padding: 0.5rem;
   width: 100%;
-  opacity: .9;
+  opacity: 0.9;
   margin-bottom: 10px;
 }
 
@@ -40,17 +40,32 @@ header a h1 {
 table {
   width: 100%;
   border-collapse: collapse;
-  border-spacing: none;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+table tbody {
+  display: table;
+  width: 100%;
 }
 
 table td {
-  width: calc(100%/3);
+  width: calc(100% / 3);
   text-align: center;
   padding: 5px;
+  -webkit-hyphens: auto;
+      -ms-hyphens: auto;
+          hyphens: auto;
 }
 
-table td, table th {
+table td,
+table th {
   border: 1px solid #ddd;
+  min-width: 200px;
+}
+
+img {
+  max-width: 100%;
 }
 
 .loader {
@@ -100,13 +115,14 @@ form label#error-label {
   color: red;
 }
 
-form input, form select {
+form input,
+form select {
   width: 100%;
   font-size: 16px;
   padding: 15px;
 }
 
-form input[type=submit] {
+form input[type="submit"] {
   margin-top: 10px;
   -webkit-appearance: none;
   border-radius: 3px;
@@ -115,11 +131,11 @@ form input[type=submit] {
   border: none;
 }
 
-form input[type=submit]:hover, form input[type=submit]:active {
+form input[type="submit"]:hover, form input[type="submit"]:active {
   background-color: #0077cc;
 }
 
-form input[type=submit]:disabled {
+form input[type="submit"]:disabled {
   background-color: gray;
 }
 
@@ -169,25 +185,38 @@ form input[type=submit]:disabled {
     -ms-grid-column: 3;
     grid-area: submit;
   }
-  form input[type=submit] {
+  form input[type="submit"] {
     margin: 0;
   }
 }
 
-.container, header h1 {
+.container,
+header h1 {
   margin: 0 1rem;
 }
 
 @media (min-width: 1000px) {
-  .container, header h1 {
+  .container,
+  header h1 {
     max-width: 90vw;
     margin: auto;
   }
 }
 
 @media (min-width: 1200px) {
-  .container, header h1 {
+  .container,
+  header h1 {
     max-width: 80vw;
+  }
+}
+
+@media (max-width: 854px) {
+  .table-wrapper {
+    max-width: 850px;
+    overflow: scroll;
+  }
+  .table-wrapper td {
+    min-width: 150px;
   }
 }
 /*# sourceMappingURL=style.css.map */

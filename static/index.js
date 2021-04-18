@@ -7,7 +7,7 @@ const url = `${ws_scheme}${document.domain}:${location.port}/socket`;
 const socket = io.connect(url);
 
 socket.on("result", function (msg) {
-  $(".results").append(`<h2>${msg.shop_name}</h2>` + msg.result);
+  $(".results").append(`<h2>${msg.shop_name}</h2><div class="table-wrapper">${msg.result}</div>`);
   $("#results-found").html(msg.shop_number);
 });
 
