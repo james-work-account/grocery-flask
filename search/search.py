@@ -41,7 +41,7 @@ driver = webdriver.Chrome(executable_path=CHROMEDRIVER_PATH, options=options)
 
 def _get_tesco_searches(search_term, max_search_length) -> ShopDetails:
     # i: index
-    # a: unused
+    # img_search_term: unused
     def img_fn(soup, i, img_search_term, elem):
         serealized_data = json.loads(html.unescape(soup.body["data-redux-state"]))['results']['pages'][0]['serializedData']
         urls = []
@@ -442,8 +442,6 @@ def search_json(shop: ShopDetails):
                     if shop.json_selector.img_base_url is not None:
                         img_url = shop.json_selector.img_base_url + img_url
                     img = f'<img src="{html.unescape(img_url)}" alt="Image of {title}"/>'
-                if shop.json_selector.img_fn is not None:
-                    img = f'<img src="{shop.json_selector.img_fn(soup, i, shop.json_selector.img_search_term, elem)}" alt="Image of {title}"/>'
                 t.add_row([img, title_with_link, price, offer])
 
             return html.unescape(t.get_html_string(sortby='Price', sort_key=lambda row: _format_price(row[0])))
