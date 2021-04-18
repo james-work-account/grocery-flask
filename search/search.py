@@ -5,6 +5,7 @@ from urllib.error import HTTPError
 import search.curl_wrapper as cw
 
 import html
+import json
 import requests
 from bs4 import BeautifulSoup
 from prettytable import PrettyTable
@@ -23,7 +24,6 @@ CHROMEDRIVER_PATH = os.environ.get(
 GOOGLE_CHROME_BIN = os.environ.get(
     'GOOGLE_CHROME_BIN', '/usr/bin/google-chrome')
 
-max_length = 10
 options = Options()
 options.add_argument(
     'user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36')
@@ -39,10 +39,25 @@ options.headless = True
 driver = webdriver.Chrome(executable_path=CHROMEDRIVER_PATH, options=options)
 
 
-def _get_tesco_searches(search_term) -> ShopDetails:
+def _get_tesco_searches(search_term, max_search_length) -> ShopDetails:
+    # i: index
+    # img_search_term: unused
+    def img_fn(soup, i, img_search_term, elem):
+        serealized_data = json.loads(html.unescape(soup.body["data-redux-state"]))['results']['pages'][0]['serializedData']
+        urls = []
+        for data in serealized_data:
+            for inner_data in data:
+                try:
+                    url = inner_data['product']['defaultImageUrl']
+                    urls.append(url)
+                except:
+                    pass
+        return urls[i]
+
     return ShopDetails(
         search_term=search_term,
         requires_webdriver=False,
+        max_search_length=max_search_length,
         shop_name='TESCO',
         url=f'https://www.tesco.com/groceries/en-GB/search?query={search_term}',
         not_found_css_selector='.empty-section',
@@ -52,13 +67,15 @@ def _get_tesco_searches(search_term) -> ShopDetails:
         link_selector='a[data-auto="product-tile--title"]',
         offer_selector='div > div.product-tile.has-promotion > div > div.promotions-wrapper.hidden-medium > ul > li > a > div > span.offer-text, .product-info-message',
         title_css_selector='a[data-auto="product-tile--title"]',
+        img_fn=img_fn
     )
 
 
-def _get_morrisons_searches(search_term) -> ShopDetails:
+def _get_morrisons_searches(search_term, max_search_length) -> ShopDetails:
     return ShopDetails(
         search_term=search_term,
         requires_webdriver=False,
+        max_search_length=max_search_length,
         shop_name='MORRISONS',
         url=f'https://groceries.morrisons.com/search?entry={search_term}',
         not_found_css_selector='p[class$=noResultsFoundMessage], div[class$=resourceNotFound]',
@@ -69,14 +86,30 @@ def _get_morrisons_searches(search_term) -> ShopDetails:
         offer_selector='a.promotion-offer > span',
         name_css_selector='.fop-title > span',
         weight_css_selector='.fop-catch-weight',
-        requires_requests=True
+        requires_requests=True,
+        img_selector='img.fop-img',
+        img_base_url='https://groceries.morrisons.com',
     )
 
 
-def _get_waitrose_searches(search_term) -> ShopDetails:
+def _get_waitrose_searches(search_term, max_search_length) -> ShopDetails:
+    # i: unused
+    # img_search_term: value to compare to
+    def img_fn(soup, i, img_search_term, elem):
+        serealized_data = html.unescape(soup.body.select_one("script"))
+        products = json.loads(str(serealized_data).replace("</script>", "")[81:])["entities"]["products"]
+        value = ""
+        for v in products:
+            j = products[v]
+            if j["name"] == elem[img_search_term]:
+                value = j["thumbnail"]
+                break
+        return value
+
     return ShopDetails(
         search_term=search_term,
         requires_webdriver=False,
+        max_search_length=max_search_length,
         shop_name='WAITROSE',
         url=f'https://www.waitrose.com/ecom/shop/search?&searchTerm={search_term}',
         not_found_css_selector='[class^=alternativeSearch]',
@@ -87,13 +120,16 @@ def _get_waitrose_searches(search_term) -> ShopDetails:
         offer_selector='[data-test=link-offer]',
         name_css_selector='[class^=name_]',
         weight_css_selector='[class^=size]',
+        img_fn=img_fn,
+        img_search_term="data-product-name"
     )
 
 
-def _get_aldi_searches(search_term) -> ShopDetails:
+def _get_aldi_searches(search_term, max_search_length) -> ShopDetails:
     return ShopDetails(
         search_term=search_term,
         requires_webdriver=False,
+        max_search_length=max_search_length,
         shop_name='ALDI',
         url=f'https://www.aldi.co.uk/search?text={search_term}',
         not_found_css_selector='p[class$=no-results]',
@@ -104,21 +140,15 @@ def _get_aldi_searches(search_term) -> ShopDetails:
         offer_selector='.js-price-discount',
         price_split=True,
         title_css_selector='.category-item__title',
-        json_selector=JsonSelectorHelper(
-            json_url=f'https://www.aldi.co.uk/api/productsearch/category/{search_term.capitalize()}?',
-            product_array_selector='results',
-            name_selector='name',
-            price_selector='price',
-            promotions_text_selector='wasPrice',
-            link='productUrl'
-        )
+        img_selector='picture.js-category-image img'
     )
 
 
-def _get_sainsburys_searches(search_term) -> ShopDetails:
+def _get_sainsburys_searches(search_term, max_search_length) -> ShopDetails:
     return ShopDetails(
         search_term=search_term,
         requires_webdriver=True,
+        max_search_length=max_search_length,
         shop_name='SAINSBURYS',
         url=f'https://www.sainsburys.co.uk/gol-ui/SearchDisplayView?filters[keyword]={search_term}',
         not_found_css_selector='div[class$=no-results]',
@@ -132,22 +162,24 @@ def _get_sainsburys_searches(search_term) -> ShopDetails:
         wait_condition=EC.presence_of_element_located(
             (By.CSS_SELECTOR, '[data-test-id=search-results-title]')),
         json_selector=JsonSelectorHelper(
-            json_url=f"https://www.sainsburys.co.uk/groceries-api/gol-services/product/v1/product?page_size={max_length}&filter%5Bkeyword%5D=",
+            json_url=f"https://www.sainsburys.co.uk/groceries-api/gol-services/product/v1/product?page_size={max_search_length}&filter%5Bkeyword%5D=",
             product_array_selector="products",
             name_selector="name",
             price_selector="retail_price.price",
             promotions_array_selector="promotions",
             promotions_text_selector="strap_line",
             weight_selector=None,
-            link="full_url"
+            link="full_url",
+            img_selector="image"
         )
     )
 
 
-def _get_asda_searches(search_term) -> ShopDetails:
+def _get_asda_searches(search_term, max_search_length) -> ShopDetails:
     return ShopDetails(
         search_term=search_term,
         requires_webdriver=True,
+        max_search_length=max_search_length,
         shop_name='ASDA',
         url=f'https://groceries.asda.com/search/{search_term}',
         not_found_css_selector='.no-result',
@@ -162,7 +194,7 @@ def _get_asda_searches(search_term) -> ShopDetails:
                                                         'search results'),
         json_selector=JsonSelectorHelper(
             json_url='https://groceries.asda.com/api/items/search?productperpage=' +
-            str(max_length) + '&keyword=',
+            str(max_search_length) + '&keyword=',
             product_array_selector='items',
             name_selector='itemName',
             price_selector='price',
@@ -170,15 +202,17 @@ def _get_asda_searches(search_term) -> ShopDetails:
             brand_selector='brandName',
             weight_selector='weight',
             base_url='https://groceries.asda.com/product/',
-            link='id'
+            link='id',
+            img_selector='imageURL'
         )
     )
 
 
-def _get_coop_searches(search_term) -> ShopDetails:
+def _get_coop_searches(search_term, max_search_length) -> ShopDetails:
     return ShopDetails(
         search_term=search_term,
         requires_webdriver=True,
+        max_search_length=max_search_length,
         shop_name='CO-OP',
         url=f'https://shop.coop.co.uk/search?term={search_term}',
         not_found_css_selector='.search-results .search-results--no-results',
@@ -211,10 +245,11 @@ def _get_coop_searches(search_term) -> ShopDetails:
     )
 
 
-def _get_bandm_searches(search_term) -> ShopDetails:
+def _get_bandm_searches(search_term, max_search_length) -> ShopDetails:
     return ShopDetails(
         search_term=search_term,
         requires_webdriver=True,
+        max_search_length=max_search_length,
         shop_name='B&M',
         url=f'https://www.bmstores.co.uk/search?query={search_term}',
         not_found_css_selector='.search-results .search-results--no-results',
@@ -233,26 +268,28 @@ def _get_bandm_searches(search_term) -> ShopDetails:
             price_selector='productsellprice',
             promotions_text_selector='promotion',
             body={"requests": [{"indexName": "prod_bmstores",
-                                "params": f"query={search_term}&hitsPerPage={max_length}"}]},
+                                "params": f"query={search_term}&hitsPerPage={max_search_length}"}]},
             headers=[
                 'Referer:https://www.bmstores.co.uk/'
             ],
             base_url='https://www.bmstores.co.uk',
-            link='url'
+            link='url',
+            img_base_url='http:',
+            img_selector='imagesteaser'
         ),
     )
 
 
-def shops(search_term):
+def shops(search_term, max_search_length):
     return [
-        _get_tesco_searches(search_term),
-        _get_waitrose_searches(search_term),
-        _get_aldi_searches(search_term),
-        _get_sainsburys_searches(search_term),
-        _get_asda_searches(search_term),
-        _get_coop_searches(search_term),
-        _get_bandm_searches(search_term),
-        _get_morrisons_searches(search_term),
+        _get_tesco_searches(search_term, max_search_length),
+        _get_sainsburys_searches(search_term, max_search_length),
+        _get_waitrose_searches(search_term, max_search_length),
+        _get_morrisons_searches(search_term, max_search_length),
+        _get_aldi_searches(search_term, max_search_length),
+        _get_asda_searches(search_term, max_search_length),
+        _get_bandm_searches(search_term, max_search_length),
+        _get_coop_searches(search_term, max_search_length),
     ]
 
 
@@ -286,11 +323,11 @@ def search_page_source(page_source: str, shop: ShopDetails) -> str:
         # If len(condition) is 0, the "no results found" text is not present and you can assume there are results on the page.
         if (len(soup.select(shop.not_found_css_selector)) == 0) & (page_source != '') & (len(soup.select(shop.items_list_selector)) > 0):
             # Create a PrettyTable
-            t = PrettyTable(['Item', 'Price', 'Offers'])
+            t = PrettyTable(['Image', 'Item', 'Price', 'Offers'])
             # Iterate over items
             for i, elem in enumerate(soup.select(shop.items_list_selector)):
                 # In case lots of items are returned, you probably only need the first few
-                if i >= max_length:
+                if i >= shop.max_search_length:
                     break
 
                 title = ''
@@ -320,7 +357,16 @@ def search_page_source(page_source: str, shop: ShopDetails) -> str:
                 offer = ' '.join([el.getText().strip() for el in
                                   set(elem.select(shop.offer_selector))])
 
-                t.add_row([title_with_link, price, offer])
+                img = ''
+                if shop.img_selector is not None:
+                    img_url = elem.select_one(shop.img_selector)['src']
+                    if shop.img_base_url is not None:
+                        img_url = shop.img_base_url + img_url
+                    img = f'<img src="{html.unescape(img_url)}" alt="Image of {title}"/>'
+                if shop.img_fn is not None:
+                    img = f'<img src="{shop.img_fn(soup, i, shop.img_search_term, elem)}" alt="Image of {title}"/>'
+
+                t.add_row([img, title_with_link, price, offer])
             return html.unescape(t.get_html_string(sortby='Price', sort_key=lambda row: _format_price(row[0])))
         else:
             return f'No results found for {shop.search_term}'
@@ -330,7 +376,7 @@ def search_page_source(page_source: str, shop: ShopDetails) -> str:
 
 def search_json(shop: ShopDetails):
     if shop.json_selector is not None:
-        t = PrettyTable(['Item', 'Price', 'Offers'])
+        t = PrettyTable(['Image', 'Item', 'Price', 'Offers'])
         if shop.json_selector.body is not None:
             js = cw.make_request(
                 url=shop.json_selector.full_url(shop.search_term),
@@ -350,7 +396,7 @@ def search_json(shop: ShopDetails):
             shop.json_selector.product_array_selector.split('.'), js)
         if len(products) > 0:
             for i, product in enumerate(products):
-                if i == max_length:
+                if i >= shop.max_search_length:
                     break
 
                 name = _get_value(
@@ -384,14 +430,19 @@ def search_json(shop: ShopDetails):
                         offer = ''
 
                 if shop.json_selector.base_url is not None:
-                    link = shop.json_selector.base_url + \
-                        product[shop.json_selector.link]
+                    link = shop.json_selector.base_url + product[shop.json_selector.link]
                 else:
                     link = product[shop.json_selector.link]
 
                 title_with_link = f'<a href="{link}" target=_blank>{title}</a>'
 
-                t.add_row([title_with_link, price, offer])
+                img = ''
+                if shop.json_selector.img_selector is not None:
+                    img_url = _get_value(shop.json_selector.img_selector.split('.'), product)
+                    if shop.json_selector.img_base_url is not None:
+                        img_url = shop.json_selector.img_base_url + img_url
+                    img = f'<img src="{html.unescape(img_url)}" alt="Image of {title}"/>'
+                t.add_row([img, title_with_link, price, offer])
 
             return html.unescape(t.get_html_string(sortby='Price', sort_key=lambda row: _format_price(row[0])))
         else:

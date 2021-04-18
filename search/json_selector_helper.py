@@ -5,6 +5,8 @@ class JsonSelectorHelper:
                  name_selector: str,
                  price_selector: str,
                  promotions_text_selector: str,
+                 img_selector: str = None,
+                 img_base_url: str = None,
                  link: str = None,
                  body: dict = None,
                  headers=None,
@@ -27,6 +29,8 @@ class JsonSelectorHelper:
         self.brand_selector = brand_selector
         self.link = link
         self.base_url = base_url
+        self.img_selector = img_selector
+        self.img_base_url = img_base_url
 
     def full_url(self, search_term: str):
         return self.json_url + search_term

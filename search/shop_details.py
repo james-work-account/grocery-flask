@@ -4,6 +4,7 @@ from search.json_selector_helper import JsonSelectorHelper
 class ShopDetails:
     def __init__(self,
                  search_term: str,
+                 max_search_length: int,
                  requires_webdriver: bool,
                  shop_name: str,
                  url: str,
@@ -14,6 +15,10 @@ class ShopDetails:
                  link_selector: str,
                  offer_selector: str,
                  currency_symbol: str = '',
+                 img_selector: str = None,
+                 img_fn: str = None,
+                 img_search_term: str = None,
+                 img_base_url: str = None,
                  price_split: bool = False,
                  name_css_selector: str = None,
                  weight_css_selector: str = None,
@@ -25,6 +30,7 @@ class ShopDetails:
                  ):
         self.requires_requests = requires_requests
         self.search_term = search_term
+        self.max_search_length = max_search_length
         self.requires_webdriver = requires_webdriver
         self.shop_name = shop_name
         self.url = url
@@ -42,3 +48,7 @@ class ShopDetails:
         self.wait_condition = wait_condition
         self.accept_cookies_css_selector = accept_cookies_css_selector
         self.json_selector = json_selector
+        self.img_selector = img_selector
+        self.img_fn = img_fn
+        self.img_search_term = img_search_term
+        self.img_base_url = img_base_url

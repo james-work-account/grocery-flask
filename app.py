@@ -3,13 +3,11 @@ import time
 from datetime import timedelta
 from distutils import util
 from urllib.error import HTTPError
-
 from flask import Flask, request, render_template, session, escape
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_socketio import SocketIO, emit
 from werkzeug.utils import redirect
-
 from bot.bot import Bot
 from config import Config
 from form import ProductForm
@@ -71,7 +69,8 @@ def home():
 @socketio.on('search', namespace='/socket')
 def search_product(data):
     product = clean_string(data['product'])
-    s = search.shops(product)
+    max_search_length = int(escape(data['max_returned']))
+    s = search.shops(product, max_search_length)
     emit('searching start', {
         'search_length': len(s)
     })
@@ -87,11 +86,10 @@ def search_product(data):
 
     try:
         emit('search length', f'{len(s)}')
-        search.max_length = int(escape(data['max_returned']))
         for i, shop in enumerate(s):
             try:
                 # deal with cache - if key exists, assign value without bothering to re-search
-                cache_key = f'{shop.shop_name}.{product}.{search.max_length}'
+                cache_key = f'{shop.shop_name}.{product}.{shop.max_search_length}'
                 cache_value = cache.get(cache_key)
                 if cache_value is not None:
                     result = cache_value
@@ -100,6 +98,7 @@ def search_product(data):
                         try:
                             result = search.search_json(shop)
                         except Exception as e:
+                            print("oh no!", e)
                             error_message = f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT"
                             if not (isinstance(e, HTTPError) and shop.shop_name == "ALDI" and e.code == 503):
                                 if bot is not None:
