@@ -114,7 +114,7 @@ def _get_waitrose_searches(search_term, max_search_length) -> ShopDetails:
             product_array_selector="",
             name_selector="name",
             price_selector="displayPrice",
-            promotions_text_selector="promotions.promotionDescription",
+            promotions_text_selector="promotion.promotionDescription",
             img_selector="productImageUrls.large",
             full_link_fn=full_link_fn,
             weight_selector="size"
@@ -495,9 +495,7 @@ def _get_value(arr, inp) -> str:
         return _get_value(tail, inp[head])
     except TypeError:
         return _get_value(tail, inp[int(head)])
-    except KeyError:
-        return _get_value([head[:-1]], inp)
-    except ValueError:
+    except (ValueError, KeyError):
         return ''
 
 

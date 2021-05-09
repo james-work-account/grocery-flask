@@ -37,7 +37,17 @@ header a h1 {
   display: none;
 }
 
+h2 {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  background-color: white;
+  margin: 0;
+  padding: 10px;
+}
+
 table {
+  margin-top: 20px;
   width: 100%;
   border-collapse: collapse;
   border-spacing: 0;
@@ -140,7 +150,13 @@ form input[type="submit"]:disabled {
 }
 
 .results {
+  position: relative;
   margin-bottom: 2rem;
+}
+
+.results h2 {
+  -webkit-box-shadow: 0 4px 2px -2px gray;
+          box-shadow: 0 4px 2px -2px gray;
 }
 
 @media (min-width: 854px) {
