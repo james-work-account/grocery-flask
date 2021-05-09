@@ -6,8 +6,10 @@ class JsonSelectorHelper:
                  price_selector: str,
                  promotions_text_selector: str,
                  img_selector: str = None,
+                 img_selector_backup: str = None,
                  img_base_url: str = None,
-                 link: str = None,
+                 link_selector: str = None,
+                 full_link_fn: str = None,
                  body: dict = None,
                  headers=None,
                  promotions_array_selector: str = None,
@@ -27,9 +29,11 @@ class JsonSelectorHelper:
         self.promotions_array_selector = promotions_array_selector
         self.weight_selector = weight_selector
         self.brand_selector = brand_selector
-        self.link = link
+        self.link_selector = link_selector
+        self.full_link_fn = full_link_fn
         self.base_url = base_url
         self.img_selector = img_selector
+        self.img_selector_backup = img_selector_backup
         self.img_base_url = img_base_url
 
     def full_url(self, search_term: str):

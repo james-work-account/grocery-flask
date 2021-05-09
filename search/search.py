@@ -95,16 +95,30 @@ def _get_morrisons_searches(search_term, max_search_length) -> ShopDetails:
 def _get_waitrose_searches(search_term, max_search_length) -> ShopDetails:
     # i: unused
     # img_search_term: value to compare to
-    def img_fn(soup, i, img_search_term, elem):
+    def search_json_in_html_fn(soup):
         serealized_data = html.unescape(soup.body.select_one("script"))
         products = json.loads(str(serealized_data).replace("</script>", "")[81:])["entities"]["products"]
-        value = ""
+
+        # turn dict or products into array of products
+        js = []
         for v in products:
             j = products[v]
-            if j["name"] == elem[img_search_term]:
-                value = j["thumbnail"]
-                break
-        return value
+            js.append(j)
+
+        def full_link_fn(product):
+            product_name = product["name"].replace(" & ", "-").replace(" ", "-")
+            return f"https://www.waitrose.com/ecom/products/{product_name}/{product['id']}"
+
+        return search_json(search_term, max_search_length, js, JsonSelectorHelper(
+            json_url='',  # not needed - already in the JSON at this point
+            product_array_selector="",
+            name_selector="name",
+            price_selector="displayPrice",
+            promotions_text_selector="promotions.promotionDescription",
+            img_selector="productImageUrls.large",
+            full_link_fn=full_link_fn,
+            weight_selector="size"
+        ))
 
     return ShopDetails(
         search_term=search_term,
@@ -113,15 +127,15 @@ def _get_waitrose_searches(search_term, max_search_length) -> ShopDetails:
         shop_name='WAITROSE',
         url=f'https://www.waitrose.com/ecom/shop/search?&searchTerm={search_term}',
         not_found_css_selector='[class^=alternativeSearch]',
-        items_list_selector='.container-fluid > .row > article',
+        items_list_selector='[class^=products__]',
         price_css_selector='span[data-test=product-pod-price] > span',
         base_url='https://www.waitrose.com',
         link_selector='header > a',
         offer_selector='[data-test=link-offer]',
         name_css_selector='[class^=name_]',
         weight_css_selector='[class^=size]',
-        img_fn=img_fn,
-        img_search_term="data-product-name"
+        search_json_in_html_fn=search_json_in_html_fn,
+        img_search_term="data-product-name",
     )
 
 
@@ -169,8 +183,9 @@ def _get_sainsburys_searches(search_term, max_search_length) -> ShopDetails:
             promotions_array_selector="promotions",
             promotions_text_selector="strap_line",
             weight_selector=None,
-            link="full_url",
-            img_selector="image"
+            link_selector="full_url",
+            img_selector="image",
+            img_selector_backup="assets.plp_image"
         )
     )
 
@@ -202,8 +217,7 @@ def _get_asda_searches(search_term, max_search_length) -> ShopDetails:
             brand_selector='brandName',
             weight_selector='weight',
             base_url='https://groceries.asda.com/product/',
-            link='id',
-            img_selector='imageURL'
+            link_selector='id',
         )
     )
 
@@ -240,7 +254,7 @@ def _get_coop_searches(search_term, max_search_length) -> ShopDetails:
                 "origin:https://shop.coop.co.uk"
             ],
             base_url='https://shop.coop.co.uk/product/',
-            link='master_product_id'
+            link_selector='master_product_id'
         )
     )
 
@@ -273,7 +287,7 @@ def _get_bandm_searches(search_term, max_search_length) -> ShopDetails:
                 'Referer:https://www.bmstores.co.uk/'
             ],
             base_url='https://www.bmstores.co.uk',
-            link='url',
+            link_selector='url',
             img_base_url='http:',
             img_selector='imagesteaser'
         ),
@@ -322,6 +336,9 @@ def search_page_source(page_source: str, shop: ShopDetails) -> str:
         # Look for something on the page that indicates that no results are found.
         # If len(condition) is 0, the "no results found" text is not present and you can assume there are results on the page.
         if (len(soup.select(shop.not_found_css_selector)) == 0) & (page_source != '') & (len(soup.select(shop.items_list_selector)) > 0):
+            if shop.search_json_in_html_fn is not None:
+                return shop.search_json_in_html_fn(soup)
+
             # Create a PrettyTable
             t = PrettyTable(['Image', 'Item', 'Price', 'Offers'])
             # Iterate over items
@@ -374,9 +391,8 @@ def search_page_source(page_source: str, shop: ShopDetails) -> str:
         return f'Error finding product: {shop.search_term}'
 
 
-def search_json(shop: ShopDetails):
+def search_shop_details_json(shop: ShopDetails):
     if shop.json_selector is not None:
-        t = PrettyTable(['Image', 'Item', 'Price', 'Offers'])
         if shop.json_selector.body is not None:
             js = cw.make_request(
                 url=shop.json_selector.full_url(shop.search_term),
@@ -391,64 +407,71 @@ def search_json(shop: ShopDetails):
                 headers=shop.json_selector.headers,
                 is_json=True
             )
-
-        products = _get_value(
-            shop.json_selector.product_array_selector.split('.'), js)
-        if len(products) > 0:
-            for i, product in enumerate(products):
-                if i >= shop.max_search_length:
-                    break
-
-                name = _get_value(
-                    shop.json_selector.name_selector.split('.'), product)
-                # remove random number from coop
-                title = re.sub("\\[\\d]", "", name)
-                if shop.json_selector.weight_selector is not None:
-                    weight = _get_value(
-                        shop.json_selector.weight_selector.split('.'), product)
-                    title = f'{title} {weight}'
-                if shop.json_selector.brand_selector is not None:
-                    try:
-                        brand = product[shop.json_selector.brand_selector]
-                        title = f'{brand} {title}'
-                    except KeyError:
-                        pass
-
-                price = _get_value(
-                    shop.json_selector.price_selector.split("."), product)
-                if not isinstance(price, str):
-                    price = "£{:.2f}".format(float(price))
-
-                if shop.json_selector.promotions_array_selector is not None:
-                    offer = ", ".join(
-                        [_get_value(shop.json_selector.promotions_text_selector.split("."), o) for o in
-                         product[shop.json_selector.promotions_array_selector]])
-                else:
-                    offer = _get_value(
-                        shop.json_selector.promotions_text_selector.split("."), product)
-                    if str(offer) == '0':
-                        offer = ''
-
-                if shop.json_selector.base_url is not None:
-                    link = shop.json_selector.base_url + product[shop.json_selector.link]
-                else:
-                    link = product[shop.json_selector.link]
-
-                title_with_link = f'<a href="{link}" target=_blank>{title}</a>'
-
-                img = ''
-                if shop.json_selector.img_selector is not None:
-                    img_url = _get_value(shop.json_selector.img_selector.split('.'), product)
-                    if shop.json_selector.img_base_url is not None:
-                        img_url = shop.json_selector.img_base_url + img_url
-                    img = f'<img src="{html.unescape(img_url)}" alt="Image of {title}"/>'
-                t.add_row([img, title_with_link, price, offer])
-
-            return html.unescape(t.get_html_string(sortby='Price', sort_key=lambda row: _format_price(row[0])))
-        else:
-            return f'No results found for {shop.search_term}'
+        return search_json(shop.search_term, shop.max_search_length, js, shop.json_selector)
     else:
         raise Exception("No JSON selector")
+
+
+def search_json(search_term, max_search_length, js, json_selector: JsonSelectorHelper):
+    t = PrettyTable(['Image', 'Item', 'Price', 'Offers'])
+    products = js if json_selector.product_array_selector == "" else _get_value(json_selector.product_array_selector.split('.'), js)
+    if len(products) > 0:
+        for i, product in enumerate(products):
+            if i >= max_search_length:
+                break
+
+            name = _get_value(
+                json_selector.name_selector.split('.'), product)
+            # remove random number from coop
+            title = re.sub("\\[\\d]", "", name)
+            if json_selector.weight_selector is not None:
+                weight = _get_value(
+                    json_selector.weight_selector.split('.'), product)
+                title = f'{title} {weight}'
+            if json_selector.brand_selector is not None:
+                try:
+                    brand = product[json_selector.brand_selector]
+                    title = f'{brand} {title}'
+                except KeyError:
+                    pass
+
+            price = _get_value(
+                json_selector.price_selector.split("."), product)
+            if not isinstance(price, str):
+                price = "£{:.2f}".format(float(price))
+
+            if json_selector.promotions_array_selector is not None:
+                offer = ", ".join(
+                    [_get_value(json_selector.promotions_text_selector.split("."), o) for o in
+                        product[json_selector.promotions_array_selector]])
+            else:
+                offer = _get_value(
+                    json_selector.promotions_text_selector.split("."), product)
+                if str(offer) == '0':
+                    offer = ''
+
+            if json_selector.full_link_fn is not None:
+                link = json_selector.full_link_fn(product)
+            elif json_selector.base_url is not None:
+                link = json_selector.base_url + product[json_selector.link_selector]
+            else:
+                link = product[json_selector.link_selector]
+
+            title_with_link = f'<a href="{link}" target=_blank>{title}</a>'
+
+            img = ''
+            if json_selector.img_selector is not None:
+                img_url = _get_value(json_selector.img_selector.split('.'), product)
+                if img_url is None:
+                    img_url = _get_value(json_selector.img_selector_backup.split('.'), product)
+                if json_selector.img_base_url is not None:
+                    img_url = json_selector.img_base_url + img_url
+                img = f'<img src="{html.unescape(img_url)}" alt="Image of {title}"/>'
+            t.add_row([img, title_with_link, price, offer])
+
+        return html.unescape(t.get_html_string(sortby='Price', sort_key=lambda row: _format_price(row[0])))
+    else:
+        return f'No results found for {search_term}'
 
 
 def _get_value(arr, inp) -> str:
@@ -465,11 +488,17 @@ def _get_value(arr, inp) -> str:
             return inp[arr[0]]
         except TypeError:
             return inp[int(arr[0])]
+        except KeyError:
+            return ''
     head, *tail = arr
     try:
         return _get_value(tail, inp[head])
     except TypeError:
         return _get_value(tail, inp[int(head)])
+    except KeyError:
+        return _get_value([head[:-1]], inp)
+    except ValueError:
+        return ''
 
 
 def _format_price(price: str) -> float:

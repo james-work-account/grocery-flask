@@ -9,7 +9,6 @@ def make_request(url: str, headers, is_json: bool, body=None):
     curl = pycurl.Curl()
     curl.setopt(pycurl.URL, url.replace(' ', '%20').replace("amp;", ""))
     curl.setopt(pycurl.HTTPHEADER, headers)
-    # curl.setopt(pycurl.FOLLOWLOCATION, 1)
 
     if body is not None:
         curl.setopt(pycurl.POST, 1)
@@ -23,11 +22,13 @@ def make_request(url: str, headers, is_json: bool, body=None):
     response = io.BytesIO()
     curl.setopt(pycurl.WRITEFUNCTION, response.write)
 
+    curl.setopt(curl.FOLLOWLOCATION, True)
+
     curl.perform()
 
     status_code = curl.getinfo(pycurl.RESPONSE_CODE)
     response_content_type = curl.getinfo(pycurl.CONTENT_TYPE)
-    if status_code != 200:
+    if status_code != 200 & status_code != 302:
         if response_content_type == 'text/html':
             raise HTTPError(url, status_code, f"Aww Snap :( Server returned HTTP status code {status_code}", None, None)
         else:

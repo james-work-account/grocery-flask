@@ -16,7 +16,8 @@ class ShopDetails:
                  offer_selector: str,
                  currency_symbol: str = '',
                  img_selector: str = None,
-                 img_fn: str = None,
+                 img_fn=None,
+                 search_json_in_html_fn=None,
                  img_search_term: str = None,
                  img_base_url: str = None,
                  price_split: bool = False,
@@ -50,5 +51,6 @@ class ShopDetails:
         self.json_selector = json_selector
         self.img_selector = img_selector
         self.img_fn = img_fn
+        self.search_json_in_html_fn = search_json_in_html_fn
         self.img_search_term = img_search_term
         self.img_base_url = img_base_url

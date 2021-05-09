@@ -96,7 +96,7 @@ def search_product(data):
                 else:
                     if shop.json_selector is not None:
                         try:
-                            result = search.search_json(shop)
+                            result = search.search_shop_details_json(shop)
                         except Exception as e:
                             print("oh no!", e)
                             error_message = f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT"
