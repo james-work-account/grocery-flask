@@ -1,11 +1,9 @@
+import html
+import json
 import os
 import re
 from urllib.error import HTTPError
 
-import search.curl_wrapper as cw
-
-import html
-import json
 import requests
 from bs4 import BeautifulSoup
 from prettytable import PrettyTable
@@ -16,6 +14,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+import search.curl_wrapper as cw
 from search.json_selector_helper import JsonSelectorHelper
 from search.shop_details import ShopDetails
 
@@ -43,9 +42,10 @@ def _get_tesco_searches(search_term, max_search_length) -> ShopDetails:
     # i: index
     # img_search_term: unused
     def img_fn(soup, i, img_search_term, elem):
-        serealized_data = json.loads(html.unescape(soup.body["data-redux-state"]))['results']['pages'][0]['serializedData']
+        serialised_data = json.loads(html.unescape(soup.body["data-redux-state"]))['results']['pages'][0][
+            'serializedData']
         urls = []
-        for data in serealized_data:
+        for data in serialised_data:
             for inner_data in data:
                 try:
                     url = inner_data['product']['defaultImageUrl']
@@ -96,8 +96,12 @@ def _get_waitrose_searches(search_term, max_search_length) -> ShopDetails:
     # i: unused
     # img_search_term: value to compare to
     def search_json_in_html_fn(soup):
-        serealized_data = html.unescape(soup.body.select_one("script"))
-        products = json.loads(str(serealized_data).replace("</script>", "")[81:])["entities"]["products"]
+        pattern = re.compile(r"__PRELOADED_STATE__",
+                             re.MULTILINE | re.DOTALL)  # something that contains `__PRELOADED_STATE__`
+        serialised_data = html.unescape(
+            soup.body.find("script", text=pattern))  # find a script tag that contains that pattern
+        _from = 81  # removes `<script nonce="SOME UUID">window.__PRELOADED_STATE__ = `
+        products = json.loads(str(serialised_data).replace("</script>", "")[_from:])["entities"]["products"]
 
         # turn dict or products into array of products
         js = []
@@ -209,7 +213,7 @@ def _get_asda_searches(search_term, max_search_length) -> ShopDetails:
                                                         'search results'),
         json_selector=JsonSelectorHelper(
             json_url='https://groceries.asda.com/api/items/search?productperpage=' +
-            str(max_search_length) + '&keyword=',
+                     str(max_search_length) + '&keyword=',
             product_array_selector='items',
             name_selector='itemName',
             price_selector='price',
@@ -322,7 +326,9 @@ def load_page_source(shop: ShopDetails) -> str:
             return req.text
         else:
             try:
-                return cw.make_request(shop.url, ["user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.99 Safari/537.36"], False)
+                return cw.make_request(shop.url, [
+                    "user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.99 Safari/537.36"],
+                                       False)
             except HTTPError as e:
                 if e.code == 404:
                     return ''
@@ -335,7 +341,8 @@ def search_page_source(page_source: str, shop: ShopDetails) -> str:
         soup = BeautifulSoup(page_source, 'html.parser')
         # Look for something on the page that indicates that no results are found.
         # If len(condition) is 0, the "no results found" text is not present and you can assume there are results on the page.
-        if (len(soup.select(shop.not_found_css_selector)) == 0) & (page_source != '') & (len(soup.select(shop.items_list_selector)) > 0):
+        if (len(soup.select(shop.not_found_css_selector)) == 0) & (page_source != '') & (
+                len(soup.select(shop.items_list_selector)) > 0):
             if shop.search_json_in_html_fn is not None:
                 return shop.search_json_in_html_fn(soup)
 
@@ -414,7 +421,8 @@ def search_shop_details_json(shop: ShopDetails):
 
 def search_json(search_term, max_search_length, js, json_selector: JsonSelectorHelper):
     t = PrettyTable(['Image', 'Item', 'Price', 'Offers'])
-    products = js if json_selector.product_array_selector == "" else _get_value(json_selector.product_array_selector.split('.'), js)
+    products = js if json_selector.product_array_selector == "" else _get_value(
+        json_selector.product_array_selector.split('.'), js)
     if len(products) > 0:
         for i, product in enumerate(products):
             if i >= max_search_length:
@@ -443,7 +451,7 @@ def search_json(search_term, max_search_length, js, json_selector: JsonSelectorH
             if json_selector.promotions_array_selector is not None:
                 offer = ", ".join(
                     [_get_value(json_selector.promotions_text_selector.split("."), o) for o in
-                        product[json_selector.promotions_array_selector]])
+                     product[json_selector.promotions_array_selector]])
             else:
                 offer = _get_value(
                     json_selector.promotions_text_selector.split("."), product)

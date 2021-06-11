@@ -3,11 +3,13 @@ import time
 from datetime import timedelta
 from distutils import util
 from urllib.error import HTTPError
+
 from flask import Flask, request, render_template, session, escape
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_socketio import SocketIO, emit
 from werkzeug.utils import redirect
+
 from bot.bot import Bot
 from config import Config
 from form import ProductForm
@@ -103,7 +105,8 @@ def search_product(data):
                             if not (isinstance(e, HTTPError) and shop.shop_name == "ALDI" and e.code == 503):
                                 if bot is not None:
                                     bot.send_message(error_message, e)
-                                print(f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT")
+                                print(
+                                    f"SEARCH FAILED FOR SHOP [{shop.shop_name}] AND PRODUCT [{product}], REVERTING TO DEFAULT")
                                 print(repr(e))
                             page_source = search.load_page_source(shop)
                             result = search.search_page_source(page_source, shop)

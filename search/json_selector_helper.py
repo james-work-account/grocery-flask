@@ -9,7 +9,7 @@ class JsonSelectorHelper:
                  img_selector_backup: str = None,
                  img_base_url: str = None,
                  link_selector: str = None,
-                 full_link_fn: str = None,
+                 full_link_fn=None,
                  body: dict = None,
                  headers=None,
                  promotions_array_selector: str = None,
